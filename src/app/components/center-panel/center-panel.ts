@@ -183,7 +183,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             }, 100);
             setTimeout(() => {
                 clearInterval(intervalId);
-            }, 1000);
+            }, 3000);
         }
     }
 
