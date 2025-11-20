@@ -1,0 +1,16 @@
+<div *ngIf="room" class="room-item">
+    <div class="room-avatar" [style.background-color]="room.bgColor">
+        {{ room.symbol | uppercase }}
+    </div>
+    <div class="room-info">
+        <div class="room-name">{{ room.groupName }}</div>
+        <div class="room-email">{{ room.emails }}</div>
+        <div class="room-preview" *ngIf="room.typing">{{ 'Typing...' }}</div>
+        <div class="room-preview" *ngIf="!room.typing && room.lastMessage && room.lastMessage.textElem">{{ room.lastMessage.textElem?.content }}</div>
+    </div>
+    <div class="room-meta">
+        <div class="room-time">{{ room.createTime | relativeTime }}</div>
+        <div class="room-status" [ngClass]="room.introduction == 'open' ? 'open' : 'closed'">{{ room.introduction }}</div>
+        <div class="room-badge" *ngIf="room.conversation && room.conversation.unreadCount">{{ room.conversation && room.conversation.unreadCount }}</div>
+    </div>
+</div>

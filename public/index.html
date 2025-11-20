@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat System Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Container để chứa chat widget -->
+    <button onclick="triggerChat()">Open Chat</button>
+    <div id="chat-container"></div>
+
+    <!-- Load Angular Web Component -->
+    <script src="jfc.chat.js"></script>
+
+    <!-- Script để tạo và truyền tham số động -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dữ liệu động của bạn
+            const userInfo = {
+                id: 'cuongnm',
+                userType: 'customer',
+                phoneNumber: '0987654321',
+                userEmail: 'cuongnm@example.com'
+            };
+
+            // 1. Tìm đến container
+            const chatContainer = document.getElementById('chat-container');
+
+            if (chatContainer) {
+                // 2. Tạo thẻ <chat-widget>
+                const chatWidget = document.createElement('chat-widget');
+
+                // 3. Gán các thuộc tính
+                chatWidget.id = 'chat';
+                chatWidget.uid = userInfo.id;
+                chatWidget.type = userInfo.userType;
+                chatWidget.phone = userInfo.phoneNumber;
+                chatWidget.email = userInfo.userEmail;
+
+                // 4. Thêm component vào DOM
+                chatContainer.appendChild(chatWidget);
+            }
+        });
+    </script>
+
+    <script>
+        function triggerChat() {
+            const chatWidget = document.getElementById('chat');
+            if (chatWidget && typeof chatWidget.openChat === 'function') {
+                chatWidget.openChat();
+            } else {
+                console.error('Chat widget chưa sẵn sàng hoặc hàm không tồn tại.');
+            }
+        }
+    </script>
+</body>
+
+</html>

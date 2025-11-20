@@ -1,0 +1,91 @@
+<div class="left-panel">
+    <div class="header" *ngIf="(chatService.positionState$ | async) == PositionState.Top">
+        <h2>Notifications</h2>
+    </div>
+    <div class="header" *ngIf="(chatService.positionState$ | async) == PositionState.Widget">
+        <h2>Chats</h2>
+        <button class="add-btn">+</button>
+    </div>
+
+    <div class="search-box">
+        <span class="search-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.58366 17.5C13.9559 17.5 17.5003 13.9556 17.5003 9.58332C17.5003 5.21107 13.9559 1.66666 9.58366 1.66666C5.2114 1.66666 1.66699 5.21107 1.66699 9.58332C1.66699 13.9556 5.2114 17.5 9.58366 17.5Z" stroke="#89898A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M18.3337 18.3333L16.667 16.6667" stroke="#89898A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </span>
+        <input type="text" placeholder="Search products..." [(ngModel)]="searchTerm">
+    </div>
+
+    <div class="sort-section">
+        <span>Sort by</span>
+        <div class="sort-dropdown">
+            <!-- Nút kích hoạt dropdown -->
+            <button class="sort-toggle" (click)="toggleSortDropdown()">
+                <span>{{ sortOptions[currentSort].label }}</span>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.5999 7.45834L11.1666 12.8917C10.5249 13.5333 9.4749 13.5333 8.83324 12.8917L3.3999 7.45834" stroke="#89898A" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+
+            <!-- Danh sách các tùy chọn, chỉ hiển thị khi isSortDropdownOpen = true -->
+            <ul class="sort-options" *ngIf="isSortDropdownOpen">
+                <li *ngFor="let option of sortOptions | keyvalue" (click)="setSort(option.key)">
+                    {{ option.value.label }}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <ng-container>
+        <ng-container *ngIf="(chatService.positionState$ | async) == PositionState.Top">
+            <div class="room-tabs">
+                <button class="tab-btn" [class.active]="currentCategory === 'all'" (click)="setCategory('all')">All</button>
+                <button class="tab-btn" [class.active]="currentCategory === 'open'" (click)="setCategory('open')">Open</button>
+                <button class="tab-btn" [class.active]="currentCategory === 'close'" (click)="setCategory('close')">Closed</button>
+            </div>
+            <div class="rooms-list top-view" *ngIf="currentCategory === 'all'">
+                <div class="room-item" *ngFor="let room of displayRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoomTop(room)">
+                    <app-room-item [room]="room"></app-room-item>
+                </div>
+            </div>
+            <div class="rooms-list top-view" *ngIf="currentCategory === 'open'">
+                <div class="room-item" *ngFor="let room of openRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoomTop(room)">
+                    <app-room-item [room]="room"></app-room-item>
+                </div>
+            </div>
+            <div class="rooms-list top-view" *ngIf="currentCategory === 'close'">
+                <div class="room-item" *ngFor="let room of closedRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoomTop(room)">
+                    <app-room-item [room]="room"></app-room-item>
+                </div>
+            </div>
+        </ng-container>
+        <ng-container *ngIf="(chatService.positionState$ | async) == PositionState.Widget">
+            <div class="rooms-section">
+                <div class="section-header" (click)="toggleOpenedSection()">
+                    <span class="section-icon">♥</span>
+                    <span class="section-title">Opened</span>
+                    <button class="add-section-btn">+</button>
+                </div>
+
+                <div class="rooms-list" [class.collapsed]="!openedExpanded">
+                    <div class="room-item" *ngFor="let room of openRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
+                        <app-room-item [room]="room"></app-room-item>
+                    </div>
+                </div>
+            </div>
+            <div class="rooms-section">
+                <div class="section-header" (click)="toggleClosedSection()">
+                    <span class="section-icon">♥</span>
+                    <span class="section-title">Closed</span>
+                    <button class="add-section-btn">+</button>
+                </div>
+                <div class="rooms-list" [class.collapsed]="!closedExpanded">
+                    <div class="room-item" *ngFor="let room of closedRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
+                        <app-room-item [room]="room"></app-room-item>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+    </ng-container>
+</div>

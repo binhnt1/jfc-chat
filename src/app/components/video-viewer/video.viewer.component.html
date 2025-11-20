@@ -1,0 +1,29 @@
+<div class="viewer-overlay" *ngIf="viewerData$ | async as data" (click)="close()">
+  
+  <!-- Nút Đóng -->
+  <button class="control-btn close-btn" (click)="close()">&times;</button>
+
+  <!-- Nút Lui (Previous) - chỉ hiển thị nếu có nhiều hơn 1 video -->
+  <button class="control-btn nav-btn prev-btn" (click)="previous(); stopPropagation($event)" *ngIf="data.urls.length > 1">
+    &#x276E;
+  </button>
+
+  <!-- Nút Tới (Next) - chỉ hiển thị nếu có nhiều hơn 1 video -->
+  <button class="control-btn nav-btn next-btn" (click)="next(); stopPropagation($event)" *ngIf="data.urls.length > 1">
+    &#x276F;
+  </button>
+
+  <!-- Thẻ Video -->
+  <div class="video-container" (click)="stopPropagation($event)">
+    <video 
+        *ngIf="currentVideoUrl"
+        class="main-video"
+        [src]="currentVideoUrl" 
+        controls 
+        autoplay 
+        playsinline>
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+</div>

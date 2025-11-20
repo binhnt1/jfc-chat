@@ -1,0 +1,8 @@
+{
+  "/": {
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true,
+    "target": "https://im.vigo-global.com"
+  }
+}

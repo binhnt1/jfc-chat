@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <base href="/">
+  <meta charset="utf-8">
+  <title>ChatSystem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+  <div class="chat-container">
+    <button onclick="triggerChat()">Open Chat</button>
+    <chat-widget uid="binhnt" type="sale" email="binhnt1@gmail.com" phone="0986847586" id="chat" top="64px" position="1"></chat-widget>
+  </div>
+</body>
+
+</html>
+
+<script>
+  function triggerChat() {
+    const chatWidget = document.getElementById('chat');
+    if (chatWidget && typeof chatWidget.openChat === 'function') {     
+      chatWidget.openChat();
+    } else {
+      console.error('Chat widget chưa sẵn sàng hoặc hàm không tồn tại.');
+    }
+  }
+</script>

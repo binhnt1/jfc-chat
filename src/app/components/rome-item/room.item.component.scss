@@ -1,0 +1,102 @@
+/* --- Avatar --- */
+.room-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+    flex-shrink: 0;
+    aspect-ratio: 1 / 1;
+}
+
+/* --- Thông tin chính --- */
+.room-info {
+    gap: 2px;
+    flex-grow: 1;
+    width: 230px;
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.room-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #000;
+}
+
+.room-email,
+.room-preview {
+    font-size: 14px;
+    color: #8e8e93;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Thông tin phụ bên phải --- */
+.room-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    font-size: 14px;
+    color: #8e8e93;
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 55px;
+}
+
+.room-status {
+    color: white;
+    border-radius: 4px;
+    padding: 0px 10px 3px 10px;
+}
+
+.room-status.open {
+    background: #2C71F6;
+}
+
+.room-status.closed {
+    background: #17B530;
+}
+
+.room-badge {
+    background-color: #d0021b;
+    /* Red */
+    color: white;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+
+
+.room-item {
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &.active {
+        background: #FFEFF2;
+    }
+}
+
+.room-item:hover {
+    background-color: #f0f8ff;
+    /* AliceBlue - màu nền khi active/hover */
+}

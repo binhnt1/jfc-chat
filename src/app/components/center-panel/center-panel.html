@@ -1,0 +1,319 @@
+<div class="center-panel">
+    <div class="chat-header">
+        <div class="room-info">
+            <div class="room-avatar" [style.background-color]="(selectedRoom$ | async)?.bgColor || '#3b82f6'">
+                {{ (selectedRoom$ | async)?.symbol || 'R0' | uppercase }}
+            </div>
+            <div class="room-details">
+                <h3>{{ (selectedRoom$ | async)?.groupName || 'Room' }}</h3>
+                <p>{{ (selectedRoom$ | async)?.emails }}</p>
+            </div>
+        </div>
+        <div class="chat-actions" *ngIf="(chatService.layoutState$ | async) == LayoutState.Minimize">
+            <button class="action-btn" (click)="toggleChat(LayoutState.Minibar)">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 16L24 16" stroke="#292D32" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+            <button class="action-btn" (click)="toggleChat(LayoutState.Maximize)">
+                <svg fill="#000000" height="20px" width="20px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+                    <g>
+                        <g>
+                            <path d="M0,0v512h512V0H0z M477.867,477.867H34.133V34.133h443.733V477.867z" />
+                        </g>
+                    </g>
+                    <g>
+                        <g>
+                            <polygon points="126.533,102.4 199.111,102.4 199.111,68.267 68.267,68.267 68.267,199.111 102.4,199.111 102.4,126.538 
+			198.422,222.558 222.556,198.423 		" />
+                        </g>
+                    </g>
+                    <g>
+                        <g>
+                            <polygon points="222.557,313.581 198.422,289.445 102.4,385.467 102.4,312.889 68.267,312.889 68.267,443.733 199.111,443.733 
+			199.111,409.6 126.538,409.6 		" />
+                        </g>
+                    </g>
+                    <g>
+                        <g>
+                            <polygon points="409.6,312.889 409.6,385.467 313.578,289.444 289.444,313.578 385.462,409.6 312.889,409.6 312.889,443.733 
+			443.733,443.733 443.733,312.889 		" />
+                        </g>
+                    </g>
+                    <g>
+                        <g>
+                            <polygon points="312.889,68.267 312.889,102.4 385.467,102.4 289.444,198.423 313.578,222.558 409.6,126.538 409.6,199.111 
+			443.733,199.111 443.733,68.267 		" />
+                        </g>
+                    </g>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-messages" #messagesContainer (scroll)="onScroll($event)">
+        <div class="date-separator">
+            <span>00:07 Today</span>
+        </div>
+
+        <div class="loading-indicator" *ngIf="isLoadingMore">
+            <span>Loading older messages...</span>
+        </div>
+
+        <div class="loading-indicator" *ngIf="isLoadingHistory">
+            <span>Loading conversation...</span>
+        </div>
+        <div *ngFor="let group of groupedMessages" (contextmenu)="onMessageRightClick($event, group)">
+            <div *ngFor="let message of group.items" class="message" [class.group]="group.items.length > 1" [class.incoming]="message.sendID !== currentUserID" [class.outgoing]="message.sendID === currentUserID">
+                <div class="message-avatar" *ngIf="group.sendID !== currentUserID">
+                    <img *ngIf="message.senderFaceUrl" [src]="message.senderFaceUrl" alt="Avatar">
+                    <div *ngIf="!message.senderFaceUrl" class="avatar-initials" [style.background-color]="getAvatarColor(message.senderNickname)">
+                        {{ message.senderNickname.charAt(0).toUpperCase() }}
+                    </div>
+                </div>
+                <div class="message-content">
+                    <div *ngIf="message.contentType === MessageType.RevokeMessage" class="revoked-message">
+                        <i>
+                            <span *ngIf="message.sendID === currentUserID">You have revoked this message</span>
+                            <span *ngIf="message.sendID !== currentUserID">{{ message.senderNickname }} have revoked this message</span>
+                        </i>
+                    </div>
+                    <div *ngIf="message.contentType == MessageType.TextMessage && message.textElem" class="message-text">
+                        {{ message.textElem.content }}
+                    </div>
+                    <div *ngIf="message.contentType == MessageType.FileMessage && message.fileElem" class="message-attachments">
+                        <div class="message-attachments" *ngIf="message.fileElem">
+                            <div class="attachment">
+                                <!-- Document attachment -->
+                                <div class="attachment-document">
+                                    <div class="document-info">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z" />
+                                            <polyline points="14,2 14,8 20,8" />
+                                        </svg>
+                                        <div class="document-details">
+                                            <div class="document-name">{{ message.fileName }}</div>
+                                            <div class="attachment-size" *ngIf="message.fileElem.fileSize">{{ message.fileElem.fileSize | fileSize }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="attachment-actions">
+                                        <button class="attachment-action-btn" (click)="viewAttachment(message)" title="Xem tài liệu">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                        </button>
+                                        <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="7,10 12,15 17,10" />
+                                                <line x1="12" y1="15" x2="12" y2="3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="message.contentType == MessageType.LocationMessage && message.textElem" class="message-location">
+                        <div class="location-card" (click)="openLocation(parseLocationFromText(message.textElem.content).lat, parseLocationFromText(message.textElem.content).lng)">
+                            <div class="location-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <div class="location-info">
+                                <div class="location-label">📍 Location</div>
+                                <div class="location-coords">{{ parseLocationFromText(message.textElem.content).label }}</div>
+                                <div class="location-action">Tap to view on map</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="message.contentType == MessageType.VideoMessage && message.videoElem" class="message-attachments">
+                        <div class="attachment-video-container">
+                            <img [src]="message.videoElem.snapshotUrl" class="attachment-video" alt="Attachment" (click)="viewAttachment(message)">
+                            <!-- Play Button Icon in the center -->
+                            <div class="video-play-overlay" (click)="viewAttachment(message)">
+                                <svg class="play-icon" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                </svg>
+                            </div>
+
+                            <!-- Video Duration (Bottom Right) -->
+                            <div class="video-duration" *ngIf="message.videoElem.duration">
+                                {{ message.videoElem.duration | duration }}
+                            </div>
+                            <div class="attachment-actions">
+                                <button class="attachment-action-btn" (click)="viewAttachment(message)" title="View video">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                                <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7,10 12,15 17,10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="message.contentType == MessageType.PictureMessage && message.pictureElem" class="message-attachments">
+                        <div class="attachment-image-container">
+                            <img [src]="message.pictureElem.sourcePicture.url" class="attachment-image" alt="Attachment" (click)="viewAttachment(message)">
+                            <div class="attachment-actions">
+                                <button class="attachment-action-btn" (click)="viewAttachment(message)" title="View picture">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                                <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7,10 12,15 17,10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="message-meta" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
+                <span>{{ group.sendTime | timestamp:'HH:mm' }}</span>
+                <div *ngIf="group.sendID === currentUserID" class="read-receipt-icon" [class.seen]="group.isRead">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                        <path d="M11.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-1.293-1.293a1 1 0 111.414-1.414L3 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selected files preview -->
+    <div class="selected-files" *ngIf="selectedFiles.length > 0">
+        <div class="selected-files-header">
+            <span>{{ selectedFiles.length }} file(s) selected</span>
+            <button class="clear-files-btn" (click)="clearSelectedFiles()">Clear all</button>
+        </div>
+        <div class="file-preview-list">
+            <div class="file-preview-item" *ngFor="let file of selectedFiles; let i = index">
+                <div class="file-preview-content">
+                    <img *ngIf="file.type === 'image' && file.preview" [src]="file.preview" class="file-preview-image" alt="Preview">
+                    <img *ngIf="file.type === 'video' && file.preview" [src]="file.preview" class="file-preview-image" alt="Preview">
+                    <div *ngIf="file.type === 'document'" class="file-preview-document">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z" />
+                            <polyline points="14,2 14,8 20,8" />
+                        </svg>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">{{ file.name }}</div>
+                        <div class="file-size">{{ file.size | fileSize }}</div>
+                    </div>
+                </div>
+                <button class="remove-file-btn" (click)="removeSelectedFile(i)" title="Remove file">×</button>
+                <div class="loading-overlay" *ngIf="file.isUploading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input">
+        <!-- User suggestions dropdown -->
+        <div class="user-suggestions" *ngIf="showUserSuggestions">
+            <div class="suggestion-item" *ngFor="let user of filteredUsers" (click)="selectUser(user)">
+                <div class="suggestion-avatar">{{ user.userID.charAt(0) }}</div>
+                <div class="suggestion-info">
+                    <div class="suggestion-name">{{ user.userID }}</div>
+                    <div class="suggestion-email">{{ user.email }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emoji picker dropdown -->
+        <div class="emoji-picker" *ngIf="showEmojiPicker">
+            <div class="emoji-grid">
+                <div class="emoji-item" *ngFor="let emoji of emojiList" (click)="selectEmoji(emoji)">
+                    {{ emoji }}
+                </div>
+            </div>
+        </div>
+
+        <div class="attachment-actions">
+            <button class="attachment-btn" (click)="onVideoSelect()" title="Choose video (MP4, MOV < 50MB)">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 23.25H9C3.57 23.25 1.25 20.93 1.25 15.5V9.5C1.25 4.07 3.57 1.75 9 1.75H15C20.43 1.75 22.75 4.07 22.75 9.5V15.5C22.75 20.93 20.43 23.25 15 23.25ZM9 3.25C4.39 3.25 2.75 4.89 2.75 9.5V15.5C2.75 20.11 4.39 21.75 9 21.75H15C19.61 21.75 21.25 20.11 21.25 15.5V9.5C21.25 4.89 19.61 3.25 15 3.25H9Z" fill="#89898A" />
+                    <path d="M13.9501 23.2502C13.6101 23.2502 13.31 23.0202 13.22 22.6802L8.2701 2.68018C8.1701 2.28018 8.42009 1.87019 8.82009 1.77019C9.22009 1.67019 9.63006 1.91019 9.73006 2.32019L14.6801 22.3202C14.7801 22.7202 14.5301 23.1302 14.1301 23.2302C14.0701 23.2402 14.0101 23.2502 13.9501 23.2502Z" fill="#89898A" />
+                    <path d="M1.99985 16.2501C1.66985 16.2501 1.37988 16.0401 1.27988 15.7101C1.15988 15.3101 1.38983 14.9001 1.78983 14.7801L11.3199 12.0001C11.7199 11.8801 12.1299 12.1101 12.2499 12.5101C12.3699 12.9101 12.1398 13.3201 11.7398 13.4401L2.20987 16.2201C2.13987 16.2401 2.06985 16.2501 1.99985 16.2501Z" fill="#89898A" />
+                </svg>
+            </button>
+
+            <button class="attachment-btn" (click)="onImageSelect()" title="Choice picture (JPG, PNG < 5MB)">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.3599 23.2499H5.58987C4.06987 23.2499 2.67987 22.4799 1.87987 21.1799C1.07987 19.8799 1.00987 18.2999 1.68987 16.9299L3.40987 13.4799C3.96987 12.3599 4.86987 11.6599 5.87987 11.5499C6.88987 11.4399 7.91987 11.9399 8.69987 12.9099L8.91987 13.1899C9.35987 13.7299 9.86987 14.0199 10.3699 13.9699C10.8699 13.9299 11.3299 13.5699 11.6699 12.9599L13.5599 9.54993C14.3399 8.13993 15.3799 7.40993 16.5099 7.45993C17.6299 7.51993 18.5899 8.35993 19.2299 9.83993L22.3599 17.1499C22.9399 18.4999 22.7999 20.0399 21.9899 21.2699C21.1899 22.5199 19.8299 23.2499 18.3599 23.2499ZM6.15987 13.0499C6.11987 13.0499 6.07987 13.0499 6.03987 13.0599C5.53987 13.1099 5.07987 13.5099 4.74987 14.1599L3.02987 17.6099C2.57987 18.4999 2.62987 19.5499 3.14987 20.3999C3.66987 21.2499 4.58987 21.7599 5.58987 21.7599H18.3499C19.3299 21.7599 20.1999 21.2899 20.7399 20.4699C21.2799 19.6499 21.3699 18.6699 20.9799 17.7699L17.8499 10.4599C17.4699 9.55993 16.9399 9.00993 16.4299 8.98993C15.9599 8.95993 15.3499 9.45993 14.8699 10.3099L12.9799 13.7199C12.3999 14.7599 11.4899 15.4099 10.4999 15.4999C9.50987 15.5799 8.49987 15.0999 7.74987 14.1599L7.52987 13.8799C7.10987 13.3299 6.62987 13.0499 6.15987 13.0499Z" fill="#89898A" />
+                    <path d="M6.97021 9.25C4.91021 9.25 3.22021 7.57 3.22021 5.5C3.22021 3.43 4.90021 1.75 6.97021 1.75C9.04021 1.75 10.7202 3.43 10.7202 5.5C10.7202 7.57 9.04021 9.25 6.97021 9.25ZM6.97021 3.25C5.73021 3.25 4.72021 4.26 4.72021 5.5C4.72021 6.74 5.73021 7.75 6.97021 7.75C8.21021 7.75 9.22021 6.74 9.22021 5.5C9.22021 4.26 8.21021 3.25 6.97021 3.25Z" fill="#89898A" />
+                </svg>
+            </button>
+
+            <button class="attachment-btn" (click)="onDocumentSelect()" title="Choice documents (PDF, DOC, XLS < 10MB)">
+                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 23.25H9C3.57 23.25 1.25 20.93 1.25 15.5V9.5C1.25 4.07 3.57 1.75 9 1.75H14C14.41 1.75 14.75 2.09 14.75 2.5C14.75 2.91 14.41 3.25 14 3.25H9C4.39 3.25 2.75 4.89 2.75 9.5V15.5C2.75 20.11 4.39 21.75 9 21.75H15C19.61 21.75 21.25 20.11 21.25 15.5V10.5C21.25 10.09 21.59 9.75 22 9.75C22.41 9.75 22.75 10.09 22.75 10.5V15.5C22.75 20.93 20.43 23.25 15 23.25Z" fill="#89898A" />
+                    <path d="M22 11.25H18C14.58 11.25 13.25 9.91999 13.25 6.49999V2.49999C13.25 2.19999 13.43 1.91999 13.71 1.80999C13.99 1.68999 14.31 1.75999 14.53 1.96999L22.53 9.96999C22.74 10.18 22.81 10.51 22.69 10.79C22.57 11.07 22.3 11.25 22 11.25ZM14.75 4.30999V6.49999C14.75 9.07999 15.42 9.74999 18 9.74999H20.19L14.75 4.30999Z" fill="#89898A" />
+                    <path d="M13 14.25H7C6.59 14.25 6.25 13.91 6.25 13.5C6.25 13.09 6.59 12.75 7 12.75H13C13.41 12.75 13.75 13.09 13.75 13.5C13.75 13.91 13.41 14.25 13 14.25Z" fill="#89898A" />
+                    <path d="M11 18.25H7C6.59 18.25 6.25 17.91 6.25 17.5C6.25 17.09 6.59 16.75 7 16.75H11C11.41 16.75 11.75 17.09 11.75 17.5C11.75 17.91 11.41 18.25 11 18.25Z" fill="#89898A" />
+                </svg>
+            </button>
+
+            <button class="attachment-btn" (click)="toggleEmojiPicker()" title="Choice emoji">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                </svg>
+            </button>
+            <button class="attachment-btn" (click)="sendLocationMessage()" title="Share location">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#89898A" />
+                </svg>
+            </button>
+        </div>
+        <div class="input-container">
+
+            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input">
+
+            <button class="send-btn" (click)="sendMessage()" [disabled]="!canSendMessage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22,2 15,22 11,13 2,9 22,2" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Hidden file inputs -->
+        <input type="file" #imageInput accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" multiple (change)="onFileSelected($event, 'image')" style="display: none;">
+        <input type="file" #documentInput accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" multiple (change)="onFileSelected($event, 'document')" style="display: none;">
+        <input type="file" #videoInput accept="video/*" multiple (change)="onFileSelected($event, 'video')" style="display: none;">
+    </div>
+</div>
+
+<div *ngIf="isContextMenuVisible" class="context-menu-container" [style.left.px]="contextMenuX" [style.top.px]="contextMenuY" (click)="$event.stopPropagation()"> <!-- Ngăn sự kiện click làm đóng menu -->
+
+    <ul class="context-menu-list">
+        <!-- Tùy chọn "Thu hồi" -->
+        <li *ngIf="contextMenuMessage?.sendID === currentUserID" (click)="recallMessage()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22.7598C6.07 22.7598 1.25 17.9398 1.25 12.0098C1.25 6.07977 6.07 1.25977 12 1.25977C17.93 1.25977 22.75 6.07977 22.75 12.0098C22.75 17.9398 17.93 22.7598 12 22.7598ZM12 2.75977C6.9 2.75977 2.75 6.90977 2.75 12.0098C2.75 17.1098 6.9 21.2598 12 21.2598C17.1 21.2598 21.25 17.1098 21.25 12.0098C21.25 6.90977 17.1 2.75977 12 2.75977Z" fill="#89898A" />
+                <path d="M15.71 15.9395C15.58 15.9395 15.45 15.9095 15.33 15.8295L12.23 13.9795C11.46 13.5195 10.89 12.5095 10.89 11.6195V7.51953C10.89 7.10953 11.23 6.76953 11.64 6.76953C12.05 6.76953 12.39 7.10953 12.39 7.51953V11.6195C12.39 11.9795 12.69 12.5095 13 12.6895L16.1 14.5395C16.46 14.7495 16.57 15.2095 16.36 15.5695C16.21 15.8095 15.96 15.9395 15.71 15.9395Z" fill="#89898A" />
+            </svg>
+            <span>Recall message</span>
+        </li>
+    </ul>
+</div>
