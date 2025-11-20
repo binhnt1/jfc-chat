@@ -87,10 +87,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     audioSupported = false;
     isRecording = false;
     recordingDuration = 0;
+    recordedAudio: { file: File; duration: number } | null = null;
     private mediaRecorder: MediaRecorder | null = null;
     private audioChunks: Blob[] = [];
     private recordingTimer: any;
     private recordingStartTime = 0;
+    private mediaStream: MediaStream | null = null;
 
     public get currentUserID(): string {
         return this.chatService.currentUserID;
@@ -312,6 +314,16 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             }
         }
 
+        // Add audio message promise if recorded
+        if (this.recordedAudio) {
+            sendPromises.push(this.chatService.sendSoundMessage({
+                file: this.recordedAudio.file,
+                duration: this.recordedAudio.duration,
+                requestId: requestId,
+                groupID: this.chatService.currentRoom.groupID,
+            }));
+        }
+
         // Reset inputs immediately for a better UX
         try {
             await Promise.all(sendPromises).then((data: any) => {
@@ -511,7 +523,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     canSendMessage(): boolean {
-        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0;
+        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0 || this.recordedAudio !== null;
     }
 
     onImageSelect(): void {
@@ -669,10 +681,20 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.LocationMessage) || null;
     }
 
+    getSoundMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.VoiceMessage);
+    }
+
+    getFileMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.FileMessage);
+    }
+
     private resetInputs(): void {
         this.messageText = '';
         this.selectedFiles = [];
         this.replyingToMessage = null;
+        this.recordedAudio = null;
+        this.recordingDuration = 0;
     }
     private resetChatState(): void {
         this.messages = [];
@@ -866,7 +888,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
     private async startRecording(): Promise<void> {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // Try different MIME types for broader browser support
             const mimeTypes = [
@@ -889,7 +911,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 return;
             }
 
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+            this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType: selectedMimeType });
             this.audioChunks = [];
             this.recordingDuration = 0;
             this.recordingStartTime = Date.now();
@@ -908,11 +930,14 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 const fileName = `voice-${Date.now()}.${this.getFileExtension(selectedMimeType)}`;
                 const audioFile = new File([audioBlob], fileName, { type: selectedMimeType });
 
-                // Send the audio message
-                await this.sendAudioMessage(audioFile, duration);
+                // Save to recordedAudio for preview
+                this.recordedAudio = { file: audioFile, duration: duration };
 
                 // Stop all tracks
-                stream.getTracks().forEach(track => track.stop());
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                    this.mediaStream = null;
+                }
 
                 // Clear timer
                 if (this.recordingTimer) {
@@ -928,8 +953,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             this.recordingTimer = setInterval(() => {
                 this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
             }, 1000);
-
-            ToastrHelper.Success('Recording started', 'Voice');
         } catch (error) {
             console.error('Error starting recording:', error);
             ToastrHelper.Error('Failed to start recording. Please check microphone permissions.', 'Error');
@@ -944,25 +967,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         }
     }
 
-    private async sendAudioMessage(audioFile: File, duration: number): Promise<void> {
-        if (!this.chatService.currentRoom) {
-            ToastrHelper.Error('No room selected', 'Error');
-            return;
-        }
-
-        try {
-            const requestId = UtilityHelper.createUniqueId();
-            await this.chatService.sendSoundMessage({
-                file: audioFile,
-                duration: duration,
-                requestId: requestId,
-                groupID: this.chatService.currentRoom.groupID
-            });
-
-            ToastrHelper.Success('Voice message sent', 'Success');
-        } catch (error) {
-            console.error('Error sending audio message:', error);
-            ToastrHelper.Error('Failed to send voice message', 'Error');
+    deleteRecording(): void {
+        this.recordedAudio = null;
+        this.recordingDuration = 0;
+        if (this.recordingTimer) {
+            clearInterval(this.recordingTimer);
+            this.recordingTimer = null;
         }
     }
 
