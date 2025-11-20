@@ -681,14 +681,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.LocationMessage) || null;
     }
 
-    getSoundMessages(group: GroupMessage): MessageDto[] {
-        return group.items.filter(m => m.contentType === MessageType.VoiceMessage);
-    }
-
-    getFileMessages(group: GroupMessage): MessageDto[] {
-        return group.items.filter(m => m.contentType === MessageType.FileMessage);
-    }
-
     private resetInputs(): void {
         this.messageText = '';
         this.selectedFiles = [];
