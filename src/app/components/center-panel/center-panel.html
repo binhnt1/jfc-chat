@@ -64,60 +64,141 @@
             <span>Loading conversation...</span>
         </div>
         <div *ngFor="let group of groupedMessages" (contextmenu)="onMessageRightClick($event, group)">
-            <div *ngFor="let message of group.items" class="message" [class.group]="group.items.length > 1" [class.incoming]="message.sendID !== currentUserID" [class.outgoing]="message.sendID === currentUserID">
-                <div class="message-avatar" *ngIf="group.sendID !== currentUserID">
-                    <img *ngIf="message.senderFaceUrl" [src]="message.senderFaceUrl" alt="Avatar">
-                    <div *ngIf="!message.senderFaceUrl" class="avatar-initials" [style.background-color]="getAvatarColor(message.senderNickname)">
-                        {{ message.senderNickname.charAt(0).toUpperCase() }}
+            <div class="message" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
+                <!-- Avatar for incoming messages -->
+                <div class="message-avatar" *ngIf="group.sendID !== currentUserID && group.items.length > 0">
+                    <img *ngIf="group.items[0].senderFaceUrl" [src]="group.items[0].senderFaceUrl" alt="Avatar">
+                    <div *ngIf="!group.items[0].senderFaceUrl" class="avatar-initials" [style.background-color]="getAvatarColor(group.items[0].senderNickname)">
+                        {{ group.items[0].senderNickname.charAt(0).toUpperCase() }}
                     </div>
                 </div>
+
                 <div class="message-content">
-                    <div *ngIf="message.contentType === MessageType.RevokeMessage" class="revoked-message">
+                    <!-- Revoked messages -->
+                    <div *ngFor="let message of getRevokedMessages(group)" class="revoked-message">
                         <i>
                             <span *ngIf="message.sendID === currentUserID">You have revoked this message</span>
                             <span *ngIf="message.sendID !== currentUserID">{{ message.senderNickname }} have revoked this message</span>
                         </i>
                     </div>
-                    <div *ngIf="message.contentType == MessageType.TextMessage && message.textElem" class="message-text">
-                        {{ message.textElem.content }}
-                    </div>
-                    <div *ngIf="message.contentType == MessageType.FileMessage && message.fileElem" class="message-attachments">
-                        <div class="message-attachments" *ngIf="message.fileElem">
-                            <div class="attachment">
-                                <!-- Document attachment -->
-                                <div class="attachment-document">
-                                    <div class="document-info">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z" />
-                                            <polyline points="14,2 14,8 20,8" />
-                                        </svg>
-                                        <div class="document-details">
-                                            <div class="document-name">{{ message.fileName }}</div>
-                                            <div class="attachment-size" *ngIf="message.fileElem.fileSize">{{ message.fileElem.fileSize | fileSize }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="attachment-actions">
-                                        <button class="attachment-action-btn" (click)="viewAttachment(message)" title="Xem tài liệu">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                        </button>
-                                        <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                                <polyline points="7,10 12,15 17,10" />
-                                                <line x1="12" y1="15" x2="12" y2="3" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
 
+                    <!-- Text message -->
+                    <div *ngIf="getTextMessage(group) as textMsg" class="message-text">
+                        <div>{{ textMsg.textElem.content }}</div>
+                    </div>
+
+                    <!-- Quote message -->
+                    <div *ngIf="getQuoteMessage(group) as textMsg" class="message-text">
+                        <!-- Quoted message (if replying) -->
+                        <div *ngIf="textMsg.quoteElem" class="quoted-message">
+                            <div class="quoted-sender">{{ textMsg.quoteElem.quoteMessage?.senderNickname || 'Unknown' }}</div>
+                            <div class="quoted-text">{{ textMsg.quoteElem.text || textMsg.quoteElem.quoteMessage?.textElem?.content || 'Message' }}</div>
+                        </div>
+                        <div>{{ textMsg.quoteElem?.text || textMsg.textElem?.content }}</div>
+                    </div>
+
+                    <!-- Image gallery (album style) -->
+                    <div *ngIf="getImageMessages(group).length > 0" class="image-gallery" [class.single]="getImageMessages(group).length === 1" [class.two]="getImageMessages(group).length === 2" [class.three]="getImageMessages(group).length === 3" [class.many]="getImageMessages(group).length > 3">
+                        <div *ngFor="let image of getImageMessages(group)" class="gallery-item">
+                            <img [src]="image.pictureElem.sourcePicture.url" class="gallery-image" alt="Image" (click)="viewAttachment(image)">
+                            <div class="image-overlay">
+                                <div class="attachment-actions">
+                                    <button class="attachment-action-btn" (click)="viewAttachment(image)" title="View picture">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    </button>
+                                    <button class="attachment-action-btn" (click)="downloadAttachment(image)" title="Download">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7,10 12,15 17,10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div *ngIf="message.contentType == MessageType.LocationMessage && message.textElem" class="message-location">
-                        <div class="location-card" (click)="openLocation(parseLocationFromText(message.textElem.content).lat, parseLocationFromText(message.textElem.content).lng)">
+
+                    <!-- Video attachments (sequential) -->
+                    <div *ngFor="let video of getVideoMessages(group)" class="message-attachments">
+                        <div class="attachment-video-container">
+                            <img [src]="video.videoElem.snapshotUrl" class="attachment-video" alt="Video" (click)="viewAttachment(video)">
+                            <div class="video-play-overlay" (click)="viewAttachment(video)">
+                                <svg class="play-icon" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+                                </svg>
+                            </div>
+                            <div class="video-duration" *ngIf="video.videoElem.duration">
+                                {{ video.videoElem.duration | duration }}
+                            </div>
+                            <div class="attachment-actions">
+                                <button class="attachment-action-btn" (click)="viewAttachment(video)" title="View video">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                                <button class="attachment-action-btn" (click)="downloadAttachment(video)" title="Download">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7,10 12,15 17,10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File attachments (sequential) -->
+                    <div *ngFor="let file of getFileMessages(group)" class="message-attachments">
+                        <div class="attachment-document">
+                            <div class="document-info">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z" />
+                                    <polyline points="14,2 14,8 20,8" />
+                                </svg>
+                                <div class="document-details">
+                                    <div class="document-name">{{ file.fileElem.fileName }}</div>
+                                    <div class="attachment-size" *ngIf="file.fileElem.fileSize">{{ file.fileElem.fileSize | fileSize }}</div>
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <button class="attachment-action-btn" (click)="viewAttachment(file)" title="Xem tài liệu">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                                <button class="attachment-action-btn" (click)="downloadAttachment(file)" title="Download">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7,10 12,15 17,10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sound messages -->
+                    <div *ngFor="let sound of getSoundMessages(group)" class="message-attachments">
+                        <div class="attachment-sound">
+                            <div class="sound-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z" fill="currentColor"/>
+                                    <path d="M4.35 9.65V11.35C4.35 15.57 7.78 19 12 19C16.22 19 19.65 15.57 19.65 11.35V9.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 19V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <audio [src]="sound.soundElem?.sourceUrl" controls class="sound-player"></audio>
+                        </div>
+                    </div>
+
+                    <!-- Location message -->
+                    <div *ngIf="getLocationMessage(group) as locationMsg" class="message-location">
+                        <div class="location-card" (click)="openLocation(locationMsg.locationElem.latitude, locationMsg.locationElem.longitude)">
                             <div class="location-icon">
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="currentColor" />
@@ -125,64 +206,15 @@
                             </div>
                             <div class="location-info">
                                 <div class="location-label">📍 Location</div>
-                                <div class="location-coords">{{ parseLocationFromText(message.textElem.content).label }}</div>
+                                <div class="location-coords">{{ locationMsg.locationElem.description }}</div>
                                 <div class="location-action">Tap to view on map</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div *ngIf="message.contentType == MessageType.VideoMessage && message.videoElem" class="message-attachments">
-                        <div class="attachment-video-container">
-                            <img [src]="message.videoElem.snapshotUrl" class="attachment-video" alt="Attachment" (click)="viewAttachment(message)">
-                            <!-- Play Button Icon in the center -->
-                            <div class="video-play-overlay" (click)="viewAttachment(message)">
-                                <svg class="play-icon" viewBox="0 0 24 24">
-                                    <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
-                                </svg>
-                            </div>
-
-                            <!-- Video Duration (Bottom Right) -->
-                            <div class="video-duration" *ngIf="message.videoElem.duration">
-                                {{ message.videoElem.duration | duration }}
-                            </div>
-                            <div class="attachment-actions">
-                                <button class="attachment-action-btn" (click)="viewAttachment(message)" title="View video">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                        <circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                </button>
-                                <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7,10 12,15 17,10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div *ngIf="message.contentType == MessageType.PictureMessage && message.pictureElem" class="message-attachments">
-                        <div class="attachment-image-container">
-                            <img [src]="message.pictureElem.sourcePicture.url" class="attachment-image" alt="Attachment" (click)="viewAttachment(message)">
-                            <div class="attachment-actions">
-                                <button class="attachment-action-btn" (click)="viewAttachment(message)" title="View picture">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                        <circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                </button>
-                                <button class="attachment-action-btn" (click)="downloadAttachment(message)" title="Download">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7,10 12,15 17,10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Message metadata -->
             <div class="message-meta" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
                 <span>{{ group.sendTime | timestamp:'HH:mm' }}</span>
                 <div *ngIf="group.sendID === currentUserID" class="read-receipt-icon" [class.seen]="group.isRead">
@@ -246,6 +278,23 @@
             </div>
         </div>
 
+        <!-- Reply preview -->
+        <div class="reply-preview" *ngIf="replyingToMessage">
+            <div class="reply-preview-content">
+                <div class="reply-indicator"></div>
+                <div class="reply-info">
+                    <div class="reply-sender">{{ replyingToMessage.senderNickname }}</div>
+                    <div class="reply-text">{{ getReplyPreviewText(replyingToMessage) }}</div>
+                </div>
+                <button class="reply-cancel-btn" (click)="cancelReply()" title="Cancel reply">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <div class="attachment-actions">
             <button class="attachment-btn" (click)="onVideoSelect()" title="Choose video (MP4, MOV < 50MB)">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -279,6 +328,22 @@
                     <line x1="15" y1="9" x2="15.01" y2="9" />
                 </svg>
             </button>
+
+            <button class="attachment-btn"
+                    [class.recording]="isRecording"
+                    [disabled]="!audioSupported"
+                    (click)="toggleRecording()"
+                    [title]="audioSupported ? (isRecording ? 'Stop recording' : 'Record voice message') : 'Voice recording not supported'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z" [attr.stroke]="isRecording ? '#ef4444' : 'currentColor'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" [attr.fill]="isRecording ? '#ef4444' : 'none'"/>
+                    <path d="M4.35 9.65V11.35C4.35 15.57 7.78 19 12 19C16.22 19 19.65 15.57 19.65 11.35V9.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M10.61 6.43C11.51 6.1 12.49 6.1 13.39 6.43" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M11.2 8.55C11.73 8.41 12.28 8.41 12.81 8.55" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 19V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span *ngIf="isRecording" class="recording-indicator">{{recordingDuration}}s</span>
+            </button>
+
             <button class="attachment-btn" (click)="sendLocationMessage()" title="Share location">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#89898A" />
@@ -286,8 +351,57 @@
             </button>
         </div>
         <div class="input-container">
+            <!-- Recording panel overlay -->
+            <div class="recording-panel" *ngIf="isRecording || recordedAudio">
+                <div class="recording-content">
+                    <!-- Recording animation -->
+                    <div class="recording-wave" *ngIf="isRecording">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
 
-            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input">
+                    <!-- Audio preview with play/pause button -->
+                    <button class="audio-play-btn" *ngIf="recordedAudio && !isRecording" (click)="toggleAudioPlayback()" title="{{ isAudioPlaying ? 'Pause' : 'Play' }}">
+                        <!-- Play icon -->
+                        <svg *ngIf="!isAudioPlaying" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <!-- Pause icon -->
+                        <svg *ngIf="isAudioPlaying" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Hidden audio element -->
+                    <audio #audioPreview [src]="audioPreviewUrl" style="display: none;"></audio>
+
+                    <!-- Recording info -->
+                    <div class="recording-info">
+                        <span class="recording-label">{{ isRecording ? 'Recording...' : 'Voice message' }}</span>
+                        <span class="recording-duration">{{ recordingDuration }}s</span>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="recording-actions">
+                        <button class="recording-action-btn delete-btn" (click)="deleteRecording()" title="Delete recording">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                        <button class="recording-action-btn stop-btn" *ngIf="isRecording" (click)="stopRecording()" title="Stop recording">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio">
 
             <button class="send-btn" (click)="sendMessage()" [disabled]="!canSendMessage()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -307,6 +421,13 @@
 <div *ngIf="isContextMenuVisible" class="context-menu-container" [style.left.px]="contextMenuX" [style.top.px]="contextMenuY" (click)="$event.stopPropagation()"> <!-- Ngăn sự kiện click làm đóng menu -->
 
     <ul class="context-menu-list">
+        <!-- Tùy chọn "Reply" - chỉ hiện khi là 1 message đơn (không group) -->
+        <li *ngIf="contextMenuMessage?.items?.length === 1" (click)="replyMessage(contextMenuMessage.items[0])">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 11L6 14M6 14L9 17M6 14H14C16.2091 14 18 12.2091 18 10V9" stroke="#89898A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Reply</span>
+        </li>
         <!-- Tùy chọn "Thu hồi" -->
         <li *ngIf="contextMenuMessage?.sendID === currentUserID" (click)="recallMessage()">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

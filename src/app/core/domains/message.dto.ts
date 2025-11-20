@@ -9,10 +9,28 @@ export class MessageTextDto {
     offlinePushInfo?: PushDto;
 }
 
+export class MessageReplyDto {
+    text: string;
+    recvID?: string;
+    groupID?: string;
+    requestId?: string;
+    replyItem?: MessageDto;
+    offlinePushInfo?: PushDto;
+}
+
 export class MessageFileDto {
     file: File;
     recvID?: string;
     groupID?: string;
+    requestId?: string;
+    offlinePushInfo?: PushDto;
+}
+
+export class MessageSoundDto {
+    file: File;
+    recvID?: string;
+    groupID?: string;
+    duration?: number;
     requestId?: string;
     offlinePushInfo?: PushDto;
 }
@@ -32,6 +50,16 @@ export class MessageVideoDto {
     groupID?: string;
     duration: number;
     requestId?: string;
+    offlinePushInfo?: PushDto;
+}
+
+export class MessageLocationDto {
+    recvID?: string;
+    groupID?: string;
+    latitude: number;
+    longitude: number;
+    requestId?: string;
+    description: string;
     offlinePushInfo?: PushDto;
 }
 

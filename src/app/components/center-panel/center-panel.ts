@@ -46,6 +46,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     @ViewChild('videoInput') videoInput!: ElementRef;
     @ViewChild('documentInput') documentInput!: ElementRef;
     @ViewChild('messagesContainer') messagesContainer!: ElementRef;
+    @ViewChild('audioPreview') audioPreview!: ElementRef<HTMLAudioElement>;
 
     messageText = '';
     showEmojiPicker = false;
@@ -81,7 +82,20 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     contextMenuY = 0;
     isContextMenuVisible = false;
     contextMenuMessage: GroupMessage = null;
-    locationPattern = /\[LOCATION:([\d.]+),([\d.]+)\|(.+?)\]/;
+    replyingToMessage: MessageDto | null = null;
+
+    // Audio recording properties
+    isRecording = false;
+    recordingDuration = 0;
+    audioSupported = false;
+    isAudioPlaying = false;
+    audioPreviewUrl: string | null = null;
+    private recordingTimer: any;
+    private recordingStartTime = 0;
+    private audioChunks: Blob[] = [];
+    private mediaStream: MediaStream | null = null;
+    private mediaRecorder: MediaRecorder | null = null;
+    recordedAudio: { file: File; duration: number } | null = null;
 
     public get currentUserID(): string {
         return this.chatService.currentUserID;
@@ -102,6 +116,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     ngOnInit(): void {
+        // Check audio recording support
+        this.checkAudioSupport();
+
         // Lắng nghe tin nhắn mới đến
         this.messageSubscription = this.chatService.newMessageHandler$
             .pipe(filter((msg): msg is MessageDto[] => msg !== null))
@@ -190,6 +207,37 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.isContextMenuVisible = false; // Đóng menu sau khi thực hiện
     }
 
+    replyMessage(message: MessageDto): void {
+        this.replyingToMessage = message;
+        this.isContextMenuVisible = false;
+        // Focus vào input để user có thể gõ reply ngay
+        setTimeout(() => {
+            const inputElement = document.querySelector('.message-input') as HTMLInputElement;
+            if (inputElement) {
+                inputElement.focus();
+            }
+        }, 100);
+    }
+
+    cancelReply(): void {
+        this.replyingToMessage = null;
+    }
+
+    getReplyPreviewText(message: MessageDto): string {
+        switch (message.contentType) {
+            case MessageType.TextMessage:
+                return message.textElem?.content || '';
+            case MessageType.PictureMessage:
+                return '📷 Photo';
+            case MessageType.VideoMessage:
+                return '🎥 Video';
+            case MessageType.FileMessage:
+                return `📄 ${message.fileElem?.fileName || 'File'}`;
+            default:
+                return 'Message';
+        }
+    }
+
     public onMessageInput(event: any): void {
         const text = event.target.value;
         this.messageText = text;
@@ -227,11 +275,21 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
         // Add text message promise if text exists
         if (this.messageText.trim()) {
-            sendPromises.push(this.chatService.sendTextMessage({
-                requestId: requestId,
-                text: this.messageText,
-                groupID: this.chatService.currentRoom.groupID
-            }));
+            // Check if replying to a message
+            if (this.replyingToMessage) {
+                sendPromises.push(this.chatService.sendReplyMessage({
+                    requestId: requestId,
+                    text: this.messageText,
+                    replyItem: this.replyingToMessage,
+                    groupID: this.chatService.currentRoom.groupID,
+                }));
+            } else {
+                sendPromises.push(this.chatService.sendTextMessage({
+                    requestId: requestId,
+                    text: this.messageText,
+                    groupID: this.chatService.currentRoom.groupID
+                }));
+            }
         }
 
         // Add file message promises
@@ -257,6 +315,16 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 file.isUploading = true;
                 sendPromises.push(this.chatService.sendFileMessage(options));
             }
+        }
+
+        // Add audio message promise if recorded
+        if (this.recordedAudio) {
+            sendPromises.push(this.chatService.sendSoundMessage({
+                requestId: requestId,
+                file: this.recordedAudio.file,
+                duration: this.recordedAudio.duration,
+                groupID: this.chatService.currentRoom.groupID,
+            }));
         }
 
         // Reset inputs immediately for a better UX
@@ -348,15 +416,15 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 const label = `Lat: ${latitude}, Lng: ${longitude}`;
-                const locationText = `[LOCATION:${latitude},${longitude}|${label}]`;
-
                 if (!this.chatService.currentRoom) return;
 
                 try {
                     const requestId = UtilityHelper.createUniqueId();
-                    const sentMessages = await this.chatService.sendTextMessage({
+                    const sentMessages = await this.chatService.sendLocationMessage({
+                        description: label,
+                        latitude: latitude,
+                        longitude: longitude,
                         requestId: requestId,
-                        text: locationText,
                         groupID: this.chatService.currentRoom.groupID
                     });
 
@@ -458,7 +526,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     canSendMessage(): boolean {
-        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0;
+        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0 || this.recordedAudio !== null;
     }
 
     onImageSelect(): void {
@@ -583,21 +651,53 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     processMessageText(text: string): string {
         return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
     }
-    parseLocationFromText(text: string): { lat: number, lng: number, label: string } | null {
-        const match = text.match(this.locationPattern);
-        if (match) {
-            return {
-                lat: parseFloat(match[1]),
-                lng: parseFloat(match[2]),
-                label: match[3]
-            };
-        }
-        return null;
+
+    getFileMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.FileMessage);
+    }
+
+    getImageMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.PictureMessage);
+    }
+
+    getVideoMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.VideoMessage);
+    }
+
+    getRevokedMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.RevokeMessage);
+    }
+
+    getTextMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
+    }
+
+    getSoundMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.VoiceMessage) || null;
+    }
+
+    getQuoteMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.QuoteMessage) || null;
+    }
+
+    getLocationMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.LocationMessage) || null;
     }
 
     private resetInputs(): void {
         this.messageText = '';
         this.selectedFiles = [];
+        this.replyingToMessage = null;
+
+        // Revoke audio URL if exists
+        if (this.audioPreviewUrl) {
+            URL.revokeObjectURL(this.audioPreviewUrl);
+            this.audioPreviewUrl = null;
+        }
+
+        this.recordedAudio = null;
+        this.recordingDuration = 0;
+        this.isAudioPlaying = false;
     }
     private resetChatState(): void {
         this.messages = [];
@@ -695,6 +795,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         try {
             // Gọi với startClientMsgID rỗng để lấy trang mới nhất
             const histories = await this.chatService.getHistoryMessages(conversationID);
+            console.log('Loaded initial messages:', histories);
             this.handleNewHistory(histories);
             this.shouldScrollToBottom = true;
         } catch (error) {
@@ -773,5 +874,168 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             video.src = URL.createObjectURL(file);
             video.load();
         });
+    }
+
+    // Audio recording methods
+    private checkAudioSupport(): void {
+        this.audioSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    }
+
+    async toggleRecording(): Promise<void> {
+        if (this.isRecording) {
+            await this.stopRecording();
+        } else {
+            await this.startRecording();
+        }
+    }
+
+    private async startRecording(): Promise<void> {
+        try {
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Try different MIME types for broader browser support
+            const mimeTypes = [
+                'audio/webm',
+                'audio/webm;codecs=opus',
+                'audio/ogg;codecs=opus',
+                'audio/mp4'
+            ];
+
+            let selectedMimeType = '';
+            for (const mimeType of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mimeType)) {
+                    selectedMimeType = mimeType;
+                    break;
+                }
+            }
+
+            if (!selectedMimeType) {
+                ToastrHelper.Error('No supported audio format found', 'Error');
+                return;
+            }
+
+            this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType: selectedMimeType });
+            this.audioChunks = [];
+            this.recordingDuration = 0;
+            this.recordingStartTime = Date.now();
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(this.audioChunks, { type: selectedMimeType });
+                const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+
+                // Create File object from Blob
+                const fileName = `voice-${Date.now()}.${this.getFileExtension(selectedMimeType)}`;
+                const audioFile = new File([audioBlob], fileName, { type: selectedMimeType });
+
+                // Create object URL for audio preview
+                this.audioPreviewUrl = URL.createObjectURL(audioBlob);
+
+                // Save to recordedAudio for preview
+                this.recordedAudio = { file: audioFile, duration: duration };
+
+                // Stop all tracks
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                    this.mediaStream = null;
+                }
+
+                // Clear timer
+                if (this.recordingTimer) {
+                    clearInterval(this.recordingTimer);
+                    this.recordingTimer = null;
+                }
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+
+            // Start duration timer
+            this.recordingTimer = setInterval(() => {
+                this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            }, 1000);
+        } catch (error) {
+            console.error('Error starting recording:', error);
+            ToastrHelper.Error('Failed to start recording. Please check microphone permissions.', 'Error');
+            this.isRecording = false;
+        }
+    }
+
+    async stopRecording(): Promise<void> {
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+        }
+    }
+
+    async deleteRecording(): Promise<void> {
+        // If currently recording, stop it first
+        if (this.isRecording) {
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                // Remove the onstop handler to prevent creating recordedAudio
+                this.mediaRecorder.onstop = null;
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+            }
+
+            // Stop media stream
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+                this.mediaStream = null;
+            }
+        }
+
+        // Revoke object URL if exists
+        if (this.audioPreviewUrl) {
+            URL.revokeObjectURL(this.audioPreviewUrl);
+            this.audioPreviewUrl = null;
+        }
+
+        // Clear recorded audio and reset state
+        this.recordedAudio = null;
+        this.recordingDuration = 0;
+        this.isAudioPlaying = false;
+
+        // Clear timer
+        if (this.recordingTimer) {
+            clearInterval(this.recordingTimer);
+            this.recordingTimer = null;
+        }
+    }
+
+    toggleAudioPlayback(): void {
+        if (!this.audioPreview || !this.audioPreviewUrl) return;
+
+        const audio = this.audioPreview.nativeElement;
+
+        if (this.isAudioPlaying) {
+            audio.pause();
+            this.isAudioPlaying = false;
+        } else {
+            audio.play();
+            this.isAudioPlaying = true;
+
+            // Reset playing state when audio ends
+            audio.onended = () => {
+                this.isAudioPlaying = false;
+            };
+        }
+    }
+
+    private getFileExtension(mimeType: string): string {
+        const mimeToExt: { [key: string]: string } = {
+            'audio/webm': 'webm',
+            'audio/webm;codecs=opus': 'webm',
+            'audio/ogg;codecs=opus': 'ogg',
+            'audio/ogg': 'ogg',
+            'audio/mp4': 'm4a',
+            'audio/mpeg': 'mp3'
+        };
+        return mimeToExt[mimeType] || 'webm';
     }
 }
