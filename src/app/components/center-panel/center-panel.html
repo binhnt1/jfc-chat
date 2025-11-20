@@ -301,50 +301,6 @@
             </div>
         </div>
 
-        <!-- Recording panel -->
-        <div class="recording-panel" *ngIf="isRecording || recordedAudio">
-            <div class="recording-content">
-                <!-- Recording animation -->
-                <div class="recording-wave" *ngIf="isRecording">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                </div>
-
-                <!-- Voice icon for recorded audio -->
-                <div class="voice-icon" *ngIf="recordedAudio && !isRecording">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z" fill="#3b82f6"/>
-                        <path d="M4.35 9.65V11.35C4.35 15.57 7.78 19 12 19C16.22 19 19.65 15.57 19.65 11.35V9.65" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M12 19V22" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-
-                <!-- Recording info -->
-                <div class="recording-info">
-                    <span class="recording-label">{{ isRecording ? 'Recording...' : 'Voice message' }}</span>
-                    <span class="recording-duration">{{ recordingDuration }}s</span>
-                </div>
-
-                <!-- Action buttons -->
-                <div class="recording-actions">
-                    <button class="recording-action-btn delete-btn" (click)="deleteRecording()" title="Delete recording">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                    <button class="recording-action-btn stop-btn" *ngIf="isRecording" (click)="stopRecording()" title="Stop recording">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <rect x="6" y="6" width="12" height="12" fill="currentColor" rx="2"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <div class="attachment-actions">
             <button class="attachment-btn" (click)="onVideoSelect()" title="Choose video (MP4, MOV < 50MB)">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -401,8 +357,57 @@
             </button>
         </div>
         <div class="input-container">
+            <!-- Recording panel overlay -->
+            <div class="recording-panel" *ngIf="isRecording || recordedAudio">
+                <div class="recording-content">
+                    <!-- Recording animation -->
+                    <div class="recording-wave" *ngIf="isRecording">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
 
-            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input">
+                    <!-- Audio preview with play/pause button -->
+                    <button class="audio-play-btn" *ngIf="recordedAudio && !isRecording" (click)="toggleAudioPlayback()" title="{{ isAudioPlaying ? 'Pause' : 'Play' }}">
+                        <!-- Play icon -->
+                        <svg *ngIf="!isAudioPlaying" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <!-- Pause icon -->
+                        <svg *ngIf="isAudioPlaying" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                    </button>
+
+                    <!-- Hidden audio element -->
+                    <audio #audioPreview [src]="audioPreviewUrl" style="display: none;"></audio>
+
+                    <!-- Recording info -->
+                    <div class="recording-info">
+                        <span class="recording-label">{{ isRecording ? 'Recording...' : 'Voice message' }}</span>
+                        <span class="recording-duration">{{ recordingDuration }}s</span>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="recording-actions">
+                        <button class="recording-action-btn delete-btn" (click)="deleteRecording()" title="Delete recording">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                        <button class="recording-action-btn stop-btn" *ngIf="isRecording" (click)="stopRecording()" title="Stop recording">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio">
 
             <button class="send-btn" (click)="sendMessage()" [disabled]="!canSendMessage()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -46,6 +46,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     @ViewChild('videoInput') videoInput!: ElementRef;
     @ViewChild('documentInput') documentInput!: ElementRef;
     @ViewChild('messagesContainer') messagesContainer!: ElementRef;
+    @ViewChild('audioPreview') audioPreview!: ElementRef<HTMLAudioElement>;
 
     messageText = '';
     showEmojiPicker = false;
@@ -87,6 +88,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     isRecording = false;
     recordingDuration = 0;
     audioSupported = false;
+    isAudioPlaying = false;
+    audioPreviewUrl: string | null = null;
     private recordingTimer: any;
     private recordingStartTime = 0;
     private audioChunks: Blob[] = [];
@@ -685,8 +688,16 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.messageText = '';
         this.selectedFiles = [];
         this.replyingToMessage = null;
+
+        // Revoke audio URL if exists
+        if (this.audioPreviewUrl) {
+            URL.revokeObjectURL(this.audioPreviewUrl);
+            this.audioPreviewUrl = null;
+        }
+
         this.recordedAudio = null;
         this.recordingDuration = 0;
+        this.isAudioPlaying = false;
     }
     private resetChatState(): void {
         this.messages = [];
@@ -922,6 +933,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 const fileName = `voice-${Date.now()}.${this.getFileExtension(selectedMimeType)}`;
                 const audioFile = new File([audioBlob], fileName, { type: selectedMimeType });
 
+                // Create object URL for audio preview
+                this.audioPreviewUrl = URL.createObjectURL(audioBlob);
+
                 // Save to recordedAudio for preview
                 this.recordedAudio = { file: audioFile, duration: duration };
 
@@ -976,14 +990,40 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             }
         }
 
+        // Revoke object URL if exists
+        if (this.audioPreviewUrl) {
+            URL.revokeObjectURL(this.audioPreviewUrl);
+            this.audioPreviewUrl = null;
+        }
+
         // Clear recorded audio and reset state
         this.recordedAudio = null;
         this.recordingDuration = 0;
+        this.isAudioPlaying = false;
 
         // Clear timer
         if (this.recordingTimer) {
             clearInterval(this.recordingTimer);
             this.recordingTimer = null;
+        }
+    }
+
+    toggleAudioPlayback(): void {
+        if (!this.audioPreview || !this.audioPreviewUrl) return;
+
+        const audio = this.audioPreview.nativeElement;
+
+        if (this.isAudioPlaying) {
+            audio.pause();
+            this.isAudioPlaying = false;
+        } else {
+            audio.play();
+            this.isAudioPlaying = true;
+
+            // Reset playing state when audio ends
+            audio.onended = () => {
+                this.isAudioPlaying = false;
+            };
         }
     }
 
