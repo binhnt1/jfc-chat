@@ -959,9 +959,28 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         }
     }
 
-    deleteRecording(): void {
+    async deleteRecording(): Promise<void> {
+        // If currently recording, stop it first
+        if (this.isRecording) {
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                // Remove the onstop handler to prevent creating recordedAudio
+                this.mediaRecorder.onstop = null;
+                this.mediaRecorder.stop();
+                this.isRecording = false;
+            }
+
+            // Stop media stream
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+                this.mediaStream = null;
+            }
+        }
+
+        // Clear recorded audio and reset state
         this.recordedAudio = null;
         this.recordingDuration = 0;
+
+        // Clear timer
         if (this.recordingTimer) {
             clearInterval(this.recordingTimer);
             this.recordingTimer = null;
