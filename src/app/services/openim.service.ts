@@ -118,7 +118,7 @@ export class ChatService {
 
         const message = await this.im.createQuoteMessage({
             text: item.text,
-            message: item.replyItem,
+            message: JSON.stringify(item.replyItem),
         });
         const offlinePushInfo = item.offlinePushInfo || this.createPushInfo('You have new reply', item.text);
 
