@@ -26,6 +26,15 @@ export class MessageFileDto {
     offlinePushInfo?: PushDto;
 }
 
+export class MessageSoundDto {
+    file: File;
+    recvID?: string;
+    groupID?: string;
+    duration?: number;
+    requestId?: string;
+    offlinePushInfo?: PushDto;
+}
+
 export class MessageImageDto {
     file: File;
     recvID: string;

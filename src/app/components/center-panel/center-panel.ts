@@ -263,8 +263,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 sendPromises.push(this.chatService.sendReplyMessage({
                     requestId: requestId,
                     text: this.messageText,
+                    replyItem: this.replyingToMessage,
                     groupID: this.chatService.currentRoom.groupID,
-                    replyItem: this.replyingToMessage
                 }));
             } else {
                 sendPromises.push(this.chatService.sendTextMessage({
@@ -645,6 +645,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
     }
 
+    getQuoteMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.QuoteMessage) || null;
+    }
+
     getLocationMessage(group: GroupMessage): MessageDto | null {
         return group.items.find(m => m.contentType === MessageType.LocationMessage) || null;
     }
@@ -750,6 +754,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         try {
             // Gọi với startClientMsgID rỗng để lấy trang mới nhất
             const histories = await this.chatService.getHistoryMessages(conversationID);
+            console.log('Loaded initial messages:', histories);
             this.handleNewHistory(histories);
             this.shouldScrollToBottom = true;
         } catch (error) {

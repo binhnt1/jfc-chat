@@ -84,13 +84,17 @@
 
                     <!-- Text message -->
                     <div *ngIf="getTextMessage(group) as textMsg" class="message-text">
+                        <div>{{ textMsg.textElem.content }}</div>
+                    </div>
+
+                    <!-- Quote message -->
+                    <div *ngIf="getQuoteMessage(group) as textMsg" class="message-text">
                         <!-- Quoted message (if replying) -->
                         <div *ngIf="textMsg.quoteElem" class="quoted-message">
                             <div class="quoted-sender">{{ textMsg.quoteElem.quoteMessage?.senderNickname || 'Unknown' }}</div>
                             <div class="quoted-text">{{ textMsg.quoteElem.text || textMsg.quoteElem.quoteMessage?.textElem?.content || 'Message' }}</div>
                         </div>
-                        <!-- Actual message text -->
-                        <div>{{ textMsg.textElem.content }}</div>
+                        <div>{{ textMsg.quoteElem?.text || textMsg.textElem?.content }}</div>
                     </div>
 
                     <!-- Image gallery (album style) -->

@@ -8,7 +8,7 @@ import { ConversationDto } from "../core/domains/conversation.dto";
 import { GroupMemberDto, RoomDto } from "../core/domains/room.dto";
 import { ImageDimensions, ImageProcessingOptions } from "../core/domains/image.data";
 import { CbEvents, getSDK, MessageItem, MessageType, PicBaseInfo } from '@openim/client-sdk';
-import { MessageDto, MessageFileDto, MessageLocationDto, MessageReplyDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
+import { MessageDto, MessageFileDto, MessageImageDto, MessageLocationDto, MessageReplyDto, MessageSoundDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
 
 @Injectable({
     providedIn: 'root',
@@ -185,7 +185,6 @@ export class ChatService {
         // send
         if (item.requestId) {
             let exObj: any = {
-                albumId: item.requestId,
                 requestId: item.requestId,
             };
             message.data.ex = JSON.stringify(exObj);
@@ -207,7 +206,45 @@ export class ChatService {
         return sentMessage.data;
     }
 
-    public async sendImageMessage(item: MessageFileDto) {
+    public async sendSoundMessage(item: MessageSoundDto) {
+        if (!item.file)
+            return null;
+
+        const message = await this.im.createSoundMessageByFile({
+            file: item.file,
+            name: item.file.name,
+            duration: item.duration,
+            dataSize: item.file.size,
+            soundType: item.file.type,
+            uuid: UtilityHelper.createUniqueId()
+        }, OpenIMConfig.platformId);
+        const offlinePushInfo = item.offlinePushInfo || this.createPushInfo('You have new sound', item.file.name);
+
+        // send
+        if (item.requestId) {
+            let exObj: any = {
+                requestId: item.requestId,
+            };
+            message.data.ex = JSON.stringify(exObj);
+            message.data.exMap = JSON.stringify(exObj);
+        }
+        const sentMessage = await this.im.sendMessage({
+            message: message.data,
+            recvID: item.recvID || '',
+            groupID: item.groupID || '',
+            offlinePushInfo: offlinePushInfo,
+        });
+        let data: MessageDto = sentMessage.data;
+        if (data) {
+            if (data.contentType == MessageType.FileMessage && data.fileElem) {
+                let file: any = data.fileElem;
+                data.fileName = file.name;
+            }
+        }
+        return sentMessage.data;
+    }
+
+    public async sendImageMessage(item: MessageImageDto) {
         if (!item.file)
             return null;
 
@@ -255,7 +292,6 @@ export class ChatService {
         // send
         if (item.requestId) {
             let exObj: any = {
-                albumId: item.requestId,
                 requestId: item.requestId,
             };
             message.data.ex = JSON.stringify(exObj);
