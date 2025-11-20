@@ -83,6 +83,15 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     contextMenuMessage: GroupMessage = null;
     replyingToMessage: MessageDto | null = null;
 
+    // Audio recording properties
+    audioSupported = false;
+    isRecording = false;
+    recordingDuration = 0;
+    private mediaRecorder: MediaRecorder | null = null;
+    private audioChunks: Blob[] = [];
+    private recordingTimer: any;
+    private recordingStartTime = 0;
+
     public get currentUserID(): string {
         return this.chatService.currentUserID;
     }
@@ -102,6 +111,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     ngOnInit(): void {
+        // Check audio recording support
+        this.checkAudioSupport();
+
         // Lắng nghe tin nhắn mới đến
         this.messageSubscription = this.chatService.newMessageHandler$
             .pipe(filter((msg): msg is MessageDto[] => msg !== null))
@@ -833,5 +845,132 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             video.src = URL.createObjectURL(file);
             video.load();
         });
+    }
+
+    // Audio recording methods
+    private checkAudioSupport(): void {
+        this.audioSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    }
+
+    async toggleRecording(): Promise<void> {
+        if (this.isRecording) {
+            await this.stopRecording();
+        } else {
+            await this.startRecording();
+        }
+    }
+
+    private async startRecording(): Promise<void> {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Try different MIME types for broader browser support
+            const mimeTypes = [
+                'audio/webm',
+                'audio/webm;codecs=opus',
+                'audio/ogg;codecs=opus',
+                'audio/mp4'
+            ];
+
+            let selectedMimeType = '';
+            for (const mimeType of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(mimeType)) {
+                    selectedMimeType = mimeType;
+                    break;
+                }
+            }
+
+            if (!selectedMimeType) {
+                ToastrHelper.Error('No supported audio format found', 'Error');
+                return;
+            }
+
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+            this.audioChunks = [];
+            this.recordingDuration = 0;
+            this.recordingStartTime = Date.now();
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(this.audioChunks, { type: selectedMimeType });
+                const duration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+
+                // Create File object from Blob
+                const fileName = `voice-${Date.now()}.${this.getFileExtension(selectedMimeType)}`;
+                const audioFile = new File([audioBlob], fileName, { type: selectedMimeType });
+
+                // Send the audio message
+                await this.sendAudioMessage(audioFile, duration);
+
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+
+                // Clear timer
+                if (this.recordingTimer) {
+                    clearInterval(this.recordingTimer);
+                    this.recordingTimer = null;
+                }
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+
+            // Start duration timer
+            this.recordingTimer = setInterval(() => {
+                this.recordingDuration = Math.floor((Date.now() - this.recordingStartTime) / 1000);
+            }, 1000);
+
+            ToastrHelper.Success('Recording started', 'Voice');
+        } catch (error) {
+            console.error('Error starting recording:', error);
+            ToastrHelper.Error('Failed to start recording. Please check microphone permissions.', 'Error');
+            this.isRecording = false;
+        }
+    }
+
+    private async stopRecording(): Promise<void> {
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+        }
+    }
+
+    private async sendAudioMessage(audioFile: File, duration: number): Promise<void> {
+        if (!this.chatService.currentRoom) {
+            ToastrHelper.Error('No room selected', 'Error');
+            return;
+        }
+
+        try {
+            const requestId = UtilityHelper.createUniqueId();
+            await this.chatService.sendSoundMessage({
+                file: audioFile,
+                duration: duration,
+                requestId: requestId,
+                groupID: this.chatService.currentRoom.groupID
+            });
+
+            ToastrHelper.Success('Voice message sent', 'Success');
+        } catch (error) {
+            console.error('Error sending audio message:', error);
+            ToastrHelper.Error('Failed to send voice message', 'Error');
+        }
+    }
+
+    private getFileExtension(mimeType: string): string {
+        const mimeToExt: { [key: string]: string } = {
+            'audio/webm': 'webm',
+            'audio/webm;codecs=opus': 'webm',
+            'audio/ogg;codecs=opus': 'ogg',
+            'audio/ogg': 'ogg',
+            'audio/mp4': 'm4a',
+            'audio/mpeg': 'mp3'
+        };
+        return mimeToExt[mimeType] || 'webm';
     }
 }
