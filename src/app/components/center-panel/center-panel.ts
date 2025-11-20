@@ -657,6 +657,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
     }
 
+    getSoundMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.VoiceMessage) || null;
+    }
+
     getQuoteMessage(group: GroupMessage): MessageDto | null {
         return group.items.find(m => m.contentType === MessageType.QuoteMessage) || null;
     }
