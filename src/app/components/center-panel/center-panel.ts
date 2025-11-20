@@ -189,6 +189,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.isContextMenuVisible = false; // Đóng menu sau khi thực hiện
     }
 
+    async replyMessage(): Promise<void> {
+       
+    }
+
     public onMessageInput(event: any): void {
         const text = event.target.value;
         this.messageText = text;

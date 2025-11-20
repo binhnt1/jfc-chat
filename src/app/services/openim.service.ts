@@ -8,7 +8,7 @@ import { ConversationDto } from "../core/domains/conversation.dto";
 import { GroupMemberDto, RoomDto } from "../core/domains/room.dto";
 import { ImageDimensions, ImageProcessingOptions } from "../core/domains/image.data";
 import { CbEvents, getSDK, MessageItem, MessageType, PicBaseInfo } from '@openim/client-sdk';
-import { MessageDto, MessageFileDto, MessageLocationDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
+import { MessageDto, MessageFileDto, MessageLocationDto, MessageReplyDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
 
 @Injectable({
     providedIn: 'root',
@@ -112,6 +112,32 @@ export class ChatService {
         }
     }
 
+    public async sendReplyMessage(item: MessageReplyDto) {
+        if (!item.text)
+            return null;
+
+        const message = await this.im.createQuoteMessage({
+            text: item.text,
+            message: item.replyItem,
+        });
+        const offlinePushInfo = item.offlinePushInfo || this.createPushInfo('You have new reply', item.text);
+
+        // send
+       if (item.requestId) {
+            let exObj: any = {
+                requestId: item.requestId,
+            };
+            message.data.ex = JSON.stringify(exObj);
+            message.data.exMap = JSON.stringify(exObj);
+        }
+        const sentMessage = await this.im.sendMessage({
+            message: message.data,
+            recvID: item.recvID || '',
+            groupID: item.groupID || '',
+            offlinePushInfo: offlinePushInfo,
+        });
+        return sentMessage.data;
+    }
     public async revokeMessage(item: RevokeMessageDto) {
         await this.im.revokeMessage({
             clientMsgID: item.clientMsgID,
