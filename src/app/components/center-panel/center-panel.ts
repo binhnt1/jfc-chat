@@ -81,6 +81,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     contextMenuY = 0;
     isContextMenuVisible = false;
     contextMenuMessage: GroupMessage = null;
+    replyingToMessage: MessageDto | null = null;
 
     public get currentUserID(): string {
         return this.chatService.currentUserID;
@@ -189,8 +190,35 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.isContextMenuVisible = false; // Đóng menu sau khi thực hiện
     }
 
-    async replyMessage(): Promise<void> {
-       
+    replyMessage(message: MessageDto): void {
+        this.replyingToMessage = message;
+        this.isContextMenuVisible = false;
+        // Focus vào input để user có thể gõ reply ngay
+        setTimeout(() => {
+            const inputElement = document.querySelector('.message-input') as HTMLInputElement;
+            if (inputElement) {
+                inputElement.focus();
+            }
+        }, 100);
+    }
+
+    cancelReply(): void {
+        this.replyingToMessage = null;
+    }
+
+    getReplyPreviewText(message: MessageDto): string {
+        switch (message.contentType) {
+            case MessageType.TextMessage:
+                return message.textElem?.content || '';
+            case MessageType.PictureMessage:
+                return '📷 Photo';
+            case MessageType.VideoMessage:
+                return '🎥 Video';
+            case MessageType.FileMessage:
+                return `📄 ${message.fileElem?.fileName || 'File'}`;
+            default:
+                return 'Message';
+        }
     }
 
     public onMessageInput(event: any): void {
@@ -230,11 +258,21 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
         // Add text message promise if text exists
         if (this.messageText.trim()) {
-            sendPromises.push(this.chatService.sendTextMessage({
-                requestId: requestId,
-                text: this.messageText,
-                groupID: this.chatService.currentRoom.groupID
-            }));
+            // Check if replying to a message
+            if (this.replyingToMessage) {
+                sendPromises.push(this.chatService.sendReplyMessage({
+                    requestId: requestId,
+                    text: this.messageText,
+                    groupID: this.chatService.currentRoom.groupID,
+                    replyItem: this.replyingToMessage
+                }));
+            } else {
+                sendPromises.push(this.chatService.sendTextMessage({
+                    requestId: requestId,
+                    text: this.messageText,
+                    groupID: this.chatService.currentRoom.groupID
+                }));
+            }
         }
 
         // Add file message promises
@@ -614,6 +652,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     private resetInputs(): void {
         this.messageText = '';
         this.selectedFiles = [];
+        this.replyingToMessage = null;
     }
     private resetChatState(): void {
         this.messages = [];
