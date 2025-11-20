@@ -84,15 +84,15 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     replyingToMessage: MessageDto | null = null;
 
     // Audio recording properties
-    audioSupported = false;
     isRecording = false;
     recordingDuration = 0;
-    recordedAudio: { file: File; duration: number } | null = null;
-    private mediaRecorder: MediaRecorder | null = null;
-    private audioChunks: Blob[] = [];
+    audioSupported = false;
     private recordingTimer: any;
     private recordingStartTime = 0;
+    private audioChunks: Blob[] = [];
     private mediaStream: MediaStream | null = null;
+    private mediaRecorder: MediaRecorder | null = null;
+    recordedAudio: { file: File; duration: number } | null = null;
 
     public get currentUserID(): string {
         return this.chatService.currentUserID;
@@ -317,9 +317,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         // Add audio message promise if recorded
         if (this.recordedAudio) {
             sendPromises.push(this.chatService.sendSoundMessage({
+                requestId: requestId,
                 file: this.recordedAudio.file,
                 duration: this.recordedAudio.duration,
-                requestId: requestId,
                 groupID: this.chatService.currentRoom.groupID,
             }));
         }
@@ -669,8 +669,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
     }
 
-    getSoundMessage(group: GroupMessage): MessageDto | null {
-        return group.items.find(m => m.contentType === MessageType.VoiceMessage) || null;
+    getSoundMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.VoiceMessage) || null;
     }
 
     getQuoteMessage(group: GroupMessage): MessageDto | null {
@@ -952,7 +952,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         }
     }
 
-    private async stopRecording(): Promise<void> {
+    async stopRecording(): Promise<void> {
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
             this.isRecording = false;
