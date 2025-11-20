@@ -192,12 +192,6 @@
                                     <path d="M12 19V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </div>
-                            <div class="sound-info">
-                                <div class="sound-waveform">
-                                    <div class="waveform-bar" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]"></div>
-                                </div>
-                                <div class="sound-duration">{{ sound.soundElem?.duration || 0 }}s</div>
-                            </div>
                             <audio [src]="sound.soundElem?.sourceUrl" controls class="sound-player"></audio>
                         </div>
                     </div>
