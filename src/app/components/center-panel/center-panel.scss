@@ -1217,23 +1217,11 @@
   &:hover {
     background: #e5e7eb;
   }
-
-  .message.outgoing & {
-    background: rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-  }
 }
 
 .location-icon {
   color: #3b82f6;
   flex-shrink: 0;
-
-  .message.outgoing & {
-    color: white;
-  }
 }
 
 .location-info {
@@ -1246,27 +1234,15 @@
   font-weight: 600;
   color: #111827;
   margin-bottom: 2px;
-
-  .message.outgoing & {
-    color: white;
-  }
 }
 
 .location-coords {
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 4px;
-
-  .message.outgoing & {
-    color: rgba(255, 255, 255, 0.8);
-  }
 }
 
 .location-action {
   font-size: 11px;
   color: #3b82f6;
-
-  .message.outgoing & {
-    color: rgba(255, 255, 255, 0.9);
-  }
 }

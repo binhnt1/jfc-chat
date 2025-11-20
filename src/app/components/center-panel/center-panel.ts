@@ -603,8 +603,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
     }
 
-    getLocationMessages(group: GroupMessage): MessageDto[] {
-        return group.items.filter(m => m.contentType === MessageType.LocationMessage);
+    getLocationMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.LocationMessage) || null;
     }
 
     private resetInputs(): void {
