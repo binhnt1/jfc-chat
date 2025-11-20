@@ -595,6 +595,31 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return null;
     }
 
+    // Helper methods for grouping messages by type
+    getTextMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.TextMessage && !this.parseLocationFromText(m.textElem?.content || '')) || null;
+    }
+
+    getLocationMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.TextMessage && m.textElem && this.parseLocationFromText(m.textElem.content)) || null;
+    }
+
+    getImageMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.PictureMessage);
+    }
+
+    getVideoMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.VideoMessage);
+    }
+
+    getFileMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.FileMessage);
+    }
+
+    getRevokedMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.RevokeMessage);
+    }
+
     private resetInputs(): void {
         this.messageText = '';
         this.selectedFiles = [];
