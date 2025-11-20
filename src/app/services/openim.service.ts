@@ -8,7 +8,7 @@ import { ConversationDto } from "../core/domains/conversation.dto";
 import { GroupMemberDto, RoomDto } from "../core/domains/room.dto";
 import { ImageDimensions, ImageProcessingOptions } from "../core/domains/image.data";
 import { CbEvents, getSDK, MessageItem, MessageType, PicBaseInfo } from '@openim/client-sdk';
-import { MessageDto, MessageFileDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
+import { MessageDto, MessageFileDto, MessageLocationDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
 
 @Injectable({
     providedIn: 'root',
@@ -277,6 +277,34 @@ export class ChatService {
             count: 1000,
         }, OpenIMConfig.platformId);
         return result.data;
+    }
+
+    public async sendLocationMessage(item: MessageLocationDto) {
+        if (!item.latitude || !item.longitude)
+            return null;
+
+        const message = await this.im.createLocationMessage({
+            latitude: item.latitude,
+            longitude: item.longitude,
+            description: item.description,
+        });
+        const offlinePushInfo = item.offlinePushInfo || this.createPushInfo('You have new message', item.description);
+
+        // send
+       if (item.requestId) {
+            let exObj: any = {
+                requestId: item.requestId,
+            };
+            message.data.ex = JSON.stringify(exObj);
+            message.data.exMap = JSON.stringify(exObj);
+        }
+        const sentMessage = await this.im.sendMessage({
+            message: message.data,
+            recvID: item.recvID || '',
+            groupID: item.groupID || '',
+            offlinePushInfo: offlinePushInfo,
+        });
+        return sentMessage.data;
     }
 
     public async markConversationMessageAsRead(conversationID: string) {

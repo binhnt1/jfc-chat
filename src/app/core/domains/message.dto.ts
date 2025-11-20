@@ -35,6 +35,16 @@ export class MessageVideoDto {
     offlinePushInfo?: PushDto;
 }
 
+export class MessageLocationDto {
+    recvID?: string;
+    groupID?: string;
+    latitude: number;
+    longitude: number;
+    requestId?: string;
+    description: string;
+    offlinePushInfo?: PushDto;
+}
+
 export class GroupMessage {
     sendID?: string;
     isRead?: boolean;

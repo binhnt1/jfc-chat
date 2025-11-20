@@ -81,7 +81,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     contextMenuY = 0;
     isContextMenuVisible = false;
     contextMenuMessage: GroupMessage = null;
-    locationPattern = /\[LOCATION:([\d.]+),([\d.]+)\|(.+?)\]/;
 
     public get currentUserID(): string {
         return this.chatService.currentUserID;
@@ -348,15 +347,15 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 const label = `Lat: ${latitude}, Lng: ${longitude}`;
-                const locationText = `[LOCATION:${latitude},${longitude}|${label}]`;
-
                 if (!this.chatService.currentRoom) return;
 
                 try {
                     const requestId = UtilityHelper.createUniqueId();
-                    const sentMessages = await this.chatService.sendTextMessage({
+                    const sentMessages = await this.chatService.sendLocationMessage({
+                        description: label,
+                        latitude: latitude,
+                        longitude: longitude,
                         requestId: requestId,
-                        text: locationText,
                         groupID: this.chatService.currentRoom.groupID
                     });
 
@@ -583,25 +582,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     processMessageText(text: string): string {
         return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
     }
-    parseLocationFromText(text: string): { lat: number, lng: number, label: string } | null {
-        const match = text.match(this.locationPattern);
-        if (match) {
-            return {
-                lat: parseFloat(match[1]),
-                lng: parseFloat(match[2]),
-                label: match[3]
-            };
-        }
-        return null;
-    }
 
-    // Helper methods for grouping messages by type
-    getTextMessage(group: GroupMessage): MessageDto | null {
-        return group.items.find(m => m.contentType === MessageType.TextMessage && !this.parseLocationFromText(m.textElem?.content || '')) || null;
-    }
-
-    getLocationMessage(group: GroupMessage): MessageDto | null {
-        return group.items.find(m => m.contentType === MessageType.TextMessage && m.textElem && this.parseLocationFromText(m.textElem.content)) || null;
+    getFileMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.FileMessage);
     }
 
     getImageMessages(group: GroupMessage): MessageDto[] {
@@ -612,12 +595,16 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return group.items.filter(m => m.contentType === MessageType.VideoMessage);
     }
 
-    getFileMessages(group: GroupMessage): MessageDto[] {
-        return group.items.filter(m => m.contentType === MessageType.FileMessage);
-    }
-
     getRevokedMessages(group: GroupMessage): MessageDto[] {
         return group.items.filter(m => m.contentType === MessageType.RevokeMessage);
+    }
+
+    getTextMessage(group: GroupMessage): MessageDto | null {
+        return group.items.find(m => m.contentType === MessageType.TextMessage) || null;
+    }
+
+    getLocationMessages(group: GroupMessage): MessageDto[] {
+        return group.items.filter(m => m.contentType === MessageType.LocationMessage);
     }
 
     private resetInputs(): void {
