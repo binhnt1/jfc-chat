@@ -175,7 +175,7 @@ export class ChatService {
 
         const message = await this.im.createFileMessageByFile({
             file: item.file,
-            name: item.file.name,
+            fileName: item.file.name,
             fileSize: item.file.size,
             fileType: item.file.type,
             uuid: UtilityHelper.createUniqueId()
