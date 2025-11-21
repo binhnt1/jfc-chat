@@ -105,13 +105,6 @@
   }
 }
 
-@media (max-width: 768px) {
-  .chat-widget {
-    border-radius: 0;
-    box-shadow: none;
-  }
-}
-
 /* Center panel should be flexible */
 .chat-widget app-center-panel {
   flex: 1;
@@ -220,5 +213,64 @@
 .position-top {
   width: fit-content;
   border-radius: 10px;
+}
 
+::ng-deep {
+  @media (max-width: 768px) {
+    .chat-widget {
+      border-radius: 0;
+      box-shadow: none;
+
+      &.minimize {
+        top: 56px !important;
+        width: 100% !important;
+
+        .chat-actions {
+          margin-right: -5px;
+
+          .btn-minibar,
+          .btn-maximize {
+            display: none !important;
+          }
+        }
+      }
+
+      &.position-top {
+        top: 56px !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        max-height: unset !important;
+        height: calc(100% - 112px) !important;
+
+        app-left-panel {
+          max-height: unset !important;
+
+          .left-panel {
+            max-height: unset;
+
+            .rooms-list.top-view {
+              min-width: unset;
+              max-width: unset;
+              overflow-y: auto;
+              max-height: unset;
+            }
+          }
+        }
+      }
+
+      .btn-icon {
+        display: none;
+        &.btn-mobile {
+          display: block;
+        }
+      }
+
+      .chat-messages {
+        max-width: 100%;
+        overflow-x: hidden;
+        min-height: calc(100vh - 245px);
+        max-height: calc(100vh - 245px);
+      }
+    }
+  }
 }

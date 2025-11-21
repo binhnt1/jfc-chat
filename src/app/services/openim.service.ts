@@ -30,6 +30,7 @@ export class ChatService {
     public readonly newGroupHandler$ = new BehaviorSubject<RoomDto | null>(null);
     public readonly connectionStatus$ = new BehaviorSubject<string>('Not Connected');
     public readonly newMessageHandler$ = new BehaviorSubject<MessageItem[] | null>(null);
+    public readonly inputStatusHandler$ = new BehaviorSubject<{ conversationID: string; userID: string; platformIDs: number[] } | null>(null);
 
     constructor(public service: ApiService) { }
 
@@ -63,6 +64,15 @@ export class ChatService {
         const updatedRooms = currentRooms.map(room => ({
             ...room,
             typing: room.conversationID === conversationId
+        }));
+        this._rooms.next(updatedRooms);
+    }
+    updateRoomTypingStatus(conversationId: string, isTyping: boolean, typingUserID?: string): void {
+        const currentRooms = this._rooms.getValue();
+        const updatedRooms = currentRooms.map(room => ({
+            ...room,
+            typing: room.conversationID === conversationId ? isTyping : room.typing,
+            typingUserID: room.conversationID === conversationId ? typingUserID : room.typingUserID
         }));
         this._rooms.next(updatedRooms);
     }
@@ -451,6 +461,22 @@ export class ChatService {
                 });
             }
             this.newMessageHandler$.next(items);
+        });
+        // Listen for typing/input status changes from other users
+        this.im.on(CbEvents.OnConversationUserInputStatusChanged, (eventData: any) => {
+            const data = eventData.data;
+            if (data) {
+                console.log('Input status changed:', data);
+                this.inputStatusHandler$.next(data);
+                if (this.listConversations) {
+                    this.listConversations.forEach((conv: ConversationDto) => {
+                        if (conv.conversationID === data.conversationID) {
+                            conv.typing = data.platformIDs && data.platformIDs.length > 0;
+                            conv.typingUserID = conv.typing ? data.userID : null;
+                        }
+                    });
+                }
+            }
         });
     }
     private createPushInfo(title: string, desc: string, ex: string = '') {

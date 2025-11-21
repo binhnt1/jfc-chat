@@ -61,28 +61,30 @@
             </div>
         </ng-container>
         <ng-container *ngIf="(chatService.positionState$ | async) == PositionState.Widget">
-            <div class="rooms-section">
-                <div class="section-header" (click)="toggleOpenedSection()">
-                    <span class="section-icon">♥</span>
-                    <span class="section-title">Opened</span>
-                    <button class="add-section-btn">+</button>
-                </div>
+            <div class="rooms-wrapper">
+                <div class="rooms-section">
+                    <div class="section-header" (click)="toggleOpenedSection()">
+                        <span class="section-icon">♥</span>
+                        <span class="section-title">Opened</span>
+                        <button class="add-section-btn">+</button>
+                    </div>
 
-                <div class="rooms-list" [class.collapsed]="!openedExpanded">
-                    <div class="room-item" *ngFor="let room of openRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
-                        <app-room-item [room]="room"></app-room-item>
+                    <div class="rooms-list" [class.collapsed]="!openedExpanded">
+                        <div class="room-item" *ngFor="let room of openRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
+                            <app-room-item [room]="room"></app-room-item>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="rooms-section">
-                <div class="section-header" (click)="toggleClosedSection()">
-                    <span class="section-icon">♥</span>
-                    <span class="section-title">Closed</span>
-                    <button class="add-section-btn">+</button>
-                </div>
-                <div class="rooms-list" [class.collapsed]="!closedExpanded">
-                    <div class="room-item" *ngFor="let room of closedRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
-                        <app-room-item [room]="room"></app-room-item>
+                <div class="rooms-section">
+                    <div class="section-header" (click)="toggleClosedSection()">
+                        <span class="section-icon">♥</span>
+                        <span class="section-title">Closed</span>
+                        <button class="add-section-btn">+</button>
+                    </div>
+                    <div class="rooms-list" [class.collapsed]="!closedExpanded">
+                        <div class="room-item" *ngFor="let room of closedRooms$ | async" [class.active]="(selectedRoom$ | async)?.groupID == room.groupID" (click)="selectRoom(room)">
+                            <app-room-item [room]="room"></app-room-item>
+                        </div>
                     </div>
                 </div>
             </div>
