@@ -368,6 +368,21 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         }
     }
 
+    public scrollToMessage(clientMsgID: string | undefined): void {
+        if (!clientMsgID) return;
+
+        const messageElement = document.querySelector(`[data-message-id="${clientMsgID}"]`);
+        if (messageElement) {
+            messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Add highlight effect
+            messageElement.classList.add('highlight-message');
+            setTimeout(() => {
+                messageElement.classList.remove('highlight-message');
+            }, 2000);
+        }
+    }
+
     public viewAttachment(message: MessageDto): void {
         let url: string = '';
         let fileName: string = 'download';

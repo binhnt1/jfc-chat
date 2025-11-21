@@ -1378,10 +1378,41 @@
   background: rgba(0, 0, 0, 0.05);
   border-left: 3px solid #3b82f6;
   border-radius: 4px;
+  transition: all 0.2s;
 
   .message.outgoing & {
     background: rgba(255, 255, 255, 0.15);
     border-left-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.1);
+      border-left-color: #2563eb;
+    }
+
+    .message.outgoing &:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  }
+}
+
+/* Highlight effect when scrolling to a message */
+.highlight-message {
+  animation: highlightPulse 2s ease-out;
+}
+
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    background-color: transparent;
   }
 }
 
