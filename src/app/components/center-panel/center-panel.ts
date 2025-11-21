@@ -965,6 +965,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                     clearInterval(this.recordingTimer);
                     this.recordingTimer = null;
                 }
+                this.isRecording = false;
             };
 
             this.mediaRecorder.start();
@@ -984,7 +985,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     async stopRecording(): Promise<void> {
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
-            this.isRecording = false;
         }
     }
 
