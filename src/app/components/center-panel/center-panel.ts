@@ -412,7 +412,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
     // Close reaction picker when clicking outside
     @HostListener('document:click', ['$event'])
-    onDocumentClick(event: MouseEvent): void {
+    onTriggerDocumentClick(event: MouseEvent): void {
         const target = event.target as HTMLElement;
         if (!target.closest('.reaction-trigger') && this.activeReactionGroup) {
             this.activeReactionGroup = null;
