@@ -63,12 +63,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
     // Reaction emojis for message reactions
     reactionEmojis = [
-        { emoji: '❤️', name: 'Yêu thích' },
-        { emoji: '👍', name: 'Thích' },
-        { emoji: '😊', name: 'Vui' },
-        { emoji: '😢', name: 'Buồn' },
-        { emoji: '😮', name: 'Ngạc nhiên' },
-        { emoji: '😡', name: 'Tức giận' }
+        { emoji: '❤️', name: 'Love' },
+        { emoji: '👍', name: 'Like' },
+        { emoji: '😊', name: 'Happy' },
+        { emoji: '😢', name: 'Sad' },
+        { emoji: '😮', name: 'Surprised' },
+        { emoji: '😡', name: 'Angry' }
     ];
     activeReactionGroup: GroupMessage | null = null;
 
