@@ -61,6 +61,17 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     // Emoji list for picker
     emojiList = UtilityHelper.emojiList;
 
+    // Reaction emojis for message reactions
+    reactionEmojis = [
+        { emoji: '❤️', name: 'Love' },
+        { emoji: '👍', name: 'Like' },
+        { emoji: '😊', name: 'Happy' },
+        { emoji: '😢', name: 'Sad' },
+        { emoji: '😮', name: 'Surprised' },
+        { emoji: '😡', name: 'Angry' }
+    ];
+    activeReactionGroup: GroupMessage | null = null;
+
     // Sample users for @tag functionality
     public isLoadingMore = false;
     public isLoadingHistory = false;
@@ -380,6 +391,31 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             setTimeout(() => {
                 messageElement.classList.remove('highlight-message');
             }, 2000);
+        }
+    }
+
+    // Toggle reaction picker for a message
+    public toggleReactionPicker(group: GroupMessage): void {
+        if (this.activeReactionGroup === group) {
+            this.activeReactionGroup = null;
+        } else {
+            this.activeReactionGroup = group;
+        }
+    }
+
+    // Send reaction (placeholder - will send customMessage later)
+    public sendReaction(group: GroupMessage, reaction: { emoji: string; name: string }): void {
+        console.log('Reaction selected:', reaction.emoji, 'for message:', group.items[0]?.clientMsgID);
+        // TODO: Implement customMessage sending for reactions
+        this.activeReactionGroup = null;
+    }
+
+    // Close reaction picker when clicking outside
+    @HostListener('document:click', ['$event'])
+    onTriggerDocumentClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.reaction-trigger') && this.activeReactionGroup) {
+            this.activeReactionGroup = null;
         }
     }
 

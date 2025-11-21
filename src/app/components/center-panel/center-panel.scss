@@ -108,6 +108,7 @@
 .message {
   gap: 12px;
   display: flex;
+  position: relative;
 
   &.group {
     .message-attachments {
@@ -123,6 +124,89 @@
 .message.outgoing {
   align-self: flex-end;
   flex-direction: row-reverse;
+}
+
+// Reaction trigger and picker styles
+.message-content {
+  position: relative;
+}
+
+.reaction-trigger {
+  position: absolute;
+  right: 0;
+  bottom: -14px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.message:hover .reaction-trigger {
+  opacity: 1;
+}
+
+.reaction-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+    background: #fef2f2;
+  }
+}
+
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 6px 8px;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  animation: reactionPopIn 0.2s ease;
+  white-space: nowrap;
+}
+
+@keyframes reactionPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.reaction-emoji {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    transform: scale(1.2);
+  }
 }
 
 .message-avatar {

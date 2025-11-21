@@ -211,6 +211,24 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Reaction trigger button -->
+                    <div class="reaction-trigger" *ngIf="group.sendID !== currentUserID">
+                        <button class="reaction-btn" (click)="toggleReactionPicker(group)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.65C6.69 21.65 2.35 17.31 2.35 12C2.35 6.69 6.69 2.35 12 2.35C17.31 2.35 21.65 6.69 21.65 12C21.65 17.31 17.31 21.65 12 21.65Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8.5 10.5C9.32843 10.5 10 9.82843 10 9C10 8.17157 9.32843 7.5 8.5 7.5C7.67157 7.5 7 8.17157 7 9C7 9.82843 7.67157 10.5 8.5 10.5Z" fill="currentColor"/>
+                                <path d="M15.5 10.5C16.3284 10.5 17 9.82843 17 9C17 8.17157 16.3284 7.5 15.5 7.5C14.6716 7.5 14 8.17157 14 9C14 9.82843 14.6716 10.5 15.5 10.5Z" fill="currentColor"/>
+                                <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <!-- Reaction picker popup -->
+                        <div class="reaction-picker" *ngIf="activeReactionGroup === group">
+                            <button class="reaction-emoji" *ngFor="let reaction of reactionEmojis" (click)="sendReaction(group, reaction)" [title]="reaction.name">
+                                {{ reaction.emoji }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -296,7 +314,7 @@
         </div>
 
         <div class="attachment-actions">
-            <button class="attachment-btn" (click)="onVideoSelect()" title="Chọn video (MP4, MOV < 50MB)">
+            <button class="attachment-btn" (click)="onVideoSelect()" title="Select video (MP4, MOV < 50MB)">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 23.25H9C3.57 23.25 1.25 20.93 1.25 15.5V9.5C1.25 4.07 3.57 1.75 9 1.75H15C20.43 1.75 22.75 4.07 22.75 9.5V15.5C22.75 20.93 20.43 23.25 15 23.25ZM9 3.25C4.39 3.25 2.75 4.89 2.75 9.5V15.5C2.75 20.11 4.39 21.75 9 21.75H15C19.61 21.75 21.25 20.11 21.25 15.5V9.5C21.25 4.89 19.61 3.25 15 3.25H9Z" fill="#89898A" />
                     <path d="M13.9501 23.2502C13.6101 23.2502 13.31 23.0202 13.22 22.6802L8.2701 2.68018C8.1701 2.28018 8.42009 1.87019 8.82009 1.77019C9.22009 1.67019 9.63006 1.91019 9.73006 2.32019L14.6801 22.3202C14.7801 22.7202 14.5301 23.1302 14.1301 23.2302C14.0701 23.2402 14.0101 23.2502 13.9501 23.2502Z" fill="#89898A" />
@@ -304,14 +322,14 @@
                 </svg>
             </button>
 
-            <button class="attachment-btn" (click)="onImageSelect()" title="Chọn ảnh (JPG, PNG < 5MB)">
+            <button class="attachment-btn" (click)="onImageSelect()" title="Select image (JPG, PNG < 5MB)">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18.3599 23.2499H5.58987C4.06987 23.2499 2.67987 22.4799 1.87987 21.1799C1.07987 19.8799 1.00987 18.2999 1.68987 16.9299L3.40987 13.4799C3.96987 12.3599 4.86987 11.6599 5.87987 11.5499C6.88987 11.4399 7.91987 11.9399 8.69987 12.9099L8.91987 13.1899C9.35987 13.7299 9.86987 14.0199 10.3699 13.9699C10.8699 13.9299 11.3299 13.5699 11.6699 12.9599L13.5599 9.54993C14.3399 8.13993 15.3799 7.40993 16.5099 7.45993C17.6299 7.51993 18.5899 8.35993 19.2299 9.83993L22.3599 17.1499C22.9399 18.4999 22.7999 20.0399 21.9899 21.2699C21.1899 22.5199 19.8299 23.2499 18.3599 23.2499ZM6.15987 13.0499C6.11987 13.0499 6.07987 13.0499 6.03987 13.0599C5.53987 13.1099 5.07987 13.5099 4.74987 14.1599L3.02987 17.6099C2.57987 18.4999 2.62987 19.5499 3.14987 20.3999C3.66987 21.2499 4.58987 21.7599 5.58987 21.7599H18.3499C19.3299 21.7599 20.1999 21.2899 20.7399 20.4699C21.2799 19.6499 21.3699 18.6699 20.9799 17.7699L17.8499 10.4599C17.4699 9.55993 16.9399 9.00993 16.4299 8.98993C15.9599 8.95993 15.3499 9.45993 14.8699 10.3099L12.9799 13.7199C12.3999 14.7599 11.4899 15.4099 10.4999 15.4999C9.50987 15.5799 8.49987 15.0999 7.74987 14.1599L7.52987 13.8799C7.10987 13.3299 6.62987 13.0499 6.15987 13.0499Z" fill="#89898A" />
                     <path d="M6.97021 9.25C4.91021 9.25 3.22021 7.57 3.22021 5.5C3.22021 3.43 4.90021 1.75 6.97021 1.75C9.04021 1.75 10.7202 3.43 10.7202 5.5C10.7202 7.57 9.04021 9.25 6.97021 9.25ZM6.97021 3.25C5.73021 3.25 4.72021 4.26 4.72021 5.5C4.72021 6.74 5.73021 7.75 6.97021 7.75C8.21021 7.75 9.22021 6.74 9.22021 5.5C9.22021 4.26 8.21021 3.25 6.97021 3.25Z" fill="#89898A" />
                 </svg>
             </button>
 
-            <button class="attachment-btn" (click)="onDocumentSelect()" title="Chọn tài liệu (PDF, DOC, XLS < 10MB)">
+            <button class="attachment-btn" (click)="onDocumentSelect()" title="Select document (PDF, DOC, XLS < 10MB)">
                 <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15 23.25H9C3.57 23.25 1.25 20.93 1.25 15.5V9.5C1.25 4.07 3.57 1.75 9 1.75H14C14.41 1.75 14.75 2.09 14.75 2.5C14.75 2.91 14.41 3.25 14 3.25H9C4.39 3.25 2.75 4.89 2.75 9.5V15.5C2.75 20.11 4.39 21.75 9 21.75H15C19.61 21.75 21.25 20.11 21.25 15.5V10.5C21.25 10.09 21.59 9.75 22 9.75C22.41 9.75 22.75 10.09 22.75 10.5V15.5C22.75 20.93 20.43 23.25 15 23.25Z" fill="#89898A" />
                     <path d="M22 11.25H18C14.58 11.25 13.25 9.91999 13.25 6.49999V2.49999C13.25 2.19999 13.43 1.91999 13.71 1.80999C13.99 1.68999 14.31 1.75999 14.53 1.96999L22.53 9.96999C22.74 10.18 22.81 10.51 22.69 10.79C22.57 11.07 22.3 11.25 22 11.25ZM14.75 4.30999V6.49999C14.75 9.07999 15.42 9.74999 18 9.74999H20.19L14.75 4.30999Z" fill="#89898A" />
@@ -320,7 +338,7 @@
                 </svg>
             </button>
 
-            <button class="attachment-btn" (click)="toggleEmojiPicker()" title="Chọn emoji">
+            <button class="attachment-btn" (click)="toggleEmojiPicker()" title="Select emoji">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M8 14s1.5 2 4 2 4-2 4-2" />
@@ -333,7 +351,7 @@
                     [class.recording]="isRecording"
                     [disabled]="!audioSupported"
                     (click)="toggleRecording()"
-                    [title]="audioSupported ? (isRecording ? 'Dừng ghi âm' : 'Ghi âm tin nhắn') : 'Trình duyệt không hỗ trợ ghi âm'">
+                    [title]="audioSupported ? (isRecording ? 'Stop recording' : 'Record voice message') : 'Browser does not support recording'">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 15.5C14.21 15.5 16 13.71 16 11.5V6C16 3.79 14.21 2 12 2C9.79 2 8 3.79 8 6V11.5C8 13.71 9.79 15.5 12 15.5Z" [attr.stroke]="isRecording ? '#ef4444' : 'currentColor'" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" [attr.fill]="isRecording ? '#ef4444' : 'none'"/>
                     <path d="M4.35 9.65V11.35C4.35 15.57 7.78 19 12 19C16.22 19 19.65 15.57 19.65 11.35V9.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -344,7 +362,7 @@
                 <span *ngIf="isRecording" class="recording-indicator">{{recordingDuration}}s</span>
             </button>
 
-            <button class="attachment-btn" (click)="sendLocationMessage()" title="Chia sẻ vị trí">
+            <button class="attachment-btn" (click)="sendLocationMessage()" title="Share location">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#89898A" />
                 </svg>
