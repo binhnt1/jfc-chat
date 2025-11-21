@@ -100,7 +100,10 @@ export class LeftPanelComponent implements OnInit, OnDestroy {
         // Listen for typing status from other users
         this.inputStatusSubscription = this.chatService.inputStatusHandler$.subscribe((data) => {
             if (data) {
-                this.chatService.updateRoomTypingStatus(data.conversationID, data.platformIDs && data.platformIDs.length > 0);
+                let typingUserID = data.userID;
+                let conversationId = data.conversationID;
+                let isTyping = data.platformIDs && data.platformIDs.length > 0;
+                this.chatService.updateRoomTypingStatus(conversationId, isTyping, typingUserID);
             }
         });
     }

@@ -176,8 +176,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.selectedRoom$.subscribe(() => {
             this.resetInputs();
             this.resetChatState();
-            this.isOtherUserTyping = false;
             this.typingUserName = null;
+            this.isOtherUserTyping = false;
             if (this.chatService.currentRoom) {
                 this.availableUsers = this.chatService.currentRoom.members;
                 this.loadInitialMessages(this.chatService.currentRoom.conversationID);
@@ -195,6 +195,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 } else {
                     this.typingUserName = null;
                 }
+                this.shouldScrollToBottom = true;
             }
         });
     }

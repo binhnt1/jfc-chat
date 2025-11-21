@@ -8,6 +8,7 @@ type RoomExtension = {
   symbol?: string;
   bgColor?: string;
   typing?: boolean;
+  typingUserID?: string;
   conversationID?: string;
   memberUserIDs?: string[];
   lastMessage?: MessageItem;

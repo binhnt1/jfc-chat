@@ -5,7 +5,7 @@
     <div class="room-info">
         <div class="room-name">{{ room.groupName }}</div>
         <div class="room-email">{{ room.emails }}</div>
-        <div class="room-preview" *ngIf="room.typing">{{ 'Typing...' }}</div>
+        <div class="room-preview" *ngIf="room.typing">{{ room.typingUserID + ' typing...' }}</div>
         <div class="room-preview" *ngIf="!room.typing && room.lastMessage && room.lastMessage.textElem">{{ room.lastMessage.textElem?.content }}</div>
     </div>
     <div class="room-meta">

@@ -254,3 +254,8 @@
   max-height: 300px;
   overflow-y: scroll;
 }
+
+.rooms-wrapper {
+  overflow: auto;
+  max-height: calc(100vh - 250px);
+}

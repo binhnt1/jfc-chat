@@ -25,12 +25,12 @@ export class ChatService {
     public currentUserID: string = '';
     public listConversations: ConversationDto[];
     public readonly typingHandler$ = new BehaviorSubject<string>(null);
-    public readonly inputStatusHandler$ = new BehaviorSubject<{ conversationID: string; userID: string; platformIDs: number[] } | null>(null);
     public readonly layoutState$ = new BehaviorSubject<LayoutState>(null);
     public readonly positionState$ = new BehaviorSubject<PositionState>(null);
     public readonly newGroupHandler$ = new BehaviorSubject<RoomDto | null>(null);
     public readonly connectionStatus$ = new BehaviorSubject<string>('Not Connected');
     public readonly newMessageHandler$ = new BehaviorSubject<MessageItem[] | null>(null);
+    public readonly inputStatusHandler$ = new BehaviorSubject<{ conversationID: string; userID: string; platformIDs: number[] } | null>(null);
 
     constructor(public service: ApiService) { }
 
@@ -67,11 +67,12 @@ export class ChatService {
         }));
         this._rooms.next(updatedRooms);
     }
-    updateRoomTypingStatus(conversationId: string, isTyping: boolean): void {
+    updateRoomTypingStatus(conversationId: string, isTyping: boolean, typingUserID?: string): void {
         const currentRooms = this._rooms.getValue();
         const updatedRooms = currentRooms.map(room => ({
             ...room,
-            typing: room.conversationID === conversationId ? isTyping : room.typing
+            typing: room.conversationID === conversationId ? isTyping : room.typing,
+            typingUserID: room.conversationID === conversationId ? typingUserID : room.typingUserID
         }));
         this._rooms.next(updatedRooms);
     }
@@ -462,13 +463,11 @@ export class ChatService {
             this.newMessageHandler$.next(items);
         });
         // Listen for typing/input status changes from other users
-        this.im.on(CbEvents.OnInputStatusChanged, (eventData: any) => {
+        this.im.on(CbEvents.OnConversationUserInputStatusChanged, (eventData: any) => {
             const data = eventData.data;
             if (data) {
-                // data: { conversationID: string, userID: string, platformIDs: number[] }
-                // platformIDs empty = stopped typing, platformIDs has values = is typing
+                console.log('Input status changed:', data);
                 this.inputStatusHandler$.next(data);
-                // Update conversation typing status
                 if (this.listConversations) {
                     this.listConversations.forEach((conv: ConversationDto) => {
                         if (conv.conversationID === data.conversationID) {
