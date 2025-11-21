@@ -92,7 +92,7 @@
                         <!-- Quoted message (if replying) -->
                         <div *ngIf="textMsg.quoteElem" class="quoted-message clickable" (click)="scrollToMessage(textMsg.quoteElem.quoteMessage?.clientMsgID)" title="Click to view original message">
                             <div class="quoted-sender">{{ textMsg.quoteElem.quoteMessage?.senderNickname || 'Unknown' }}</div>
-                            <div class="quoted-text">{{ textMsg.quoteElem.text || textMsg.quoteElem.quoteMessage?.textElem?.content || 'Message' }}</div>
+                            <div class="quoted-text">{{ textMsg.quoteElem.quoteMessage?.quoteElem?.text || 'Message' }}</div>
                         </div>
                         <div>{{ textMsg.quoteElem?.text || textMsg.textElem?.content }}</div>
                     </div>
