@@ -87,7 +87,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     private typingTimer: any;
     private noMoreOldMessages = false;
     private messageSubscription!: Subscription;
+    private inputStatusSubscription!: Subscription;
     private oldestMessageID: string | null = null;
+
+    // Typing indicator for current conversation
+    isOtherUserTyping = false;
+    typingUserName: string | null = null;
 
     contextMenuX = 0;
     contextMenuY = 0;
@@ -171,9 +176,25 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.selectedRoom$.subscribe(() => {
             this.resetInputs();
             this.resetChatState();
+            this.isOtherUserTyping = false;
+            this.typingUserName = null;
             if (this.chatService.currentRoom) {
                 this.availableUsers = this.chatService.currentRoom.members;
                 this.loadInitialMessages(this.chatService.currentRoom.conversationID);
+            }
+        });
+
+        // Listen for typing status from other users
+        this.inputStatusSubscription = this.chatService.inputStatusHandler$.subscribe((data) => {
+            if (!data || !this.chatService.currentRoom) return;
+            if (data.conversationID === this.chatService.currentRoom.conversationID) {
+                this.isOtherUserTyping = data.platformIDs && data.platformIDs.length > 0;
+                if (this.isOtherUserTyping && data.userID && this.availableUsers) {
+                    const user = this.availableUsers.find(u => u.userID === data.userID);
+                    this.typingUserName = user?.nickname || user?.userID || 'Someone';
+                } else {
+                    this.typingUserName = null;
+                }
             }
         });
     }
@@ -182,6 +203,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (this.messageSubscription) {
             this.messageSubscription.unsubscribe();
             this.messageSubscription = null;
+        }
+        if (this.inputStatusSubscription) {
+            this.inputStatusSubscription.unsubscribe();
+            this.inputStatusSubscription = null;
         }
     }
 

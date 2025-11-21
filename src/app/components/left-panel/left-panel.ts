@@ -31,6 +31,7 @@ export class LeftPanelComponent implements OnInit, OnDestroy {
 
     private groupSubscription!: Subscription;
     private typingSubscription!: Subscription;
+    private inputStatusSubscription!: Subscription;
 
     public isSortDropdownOpen = false;
     public currentSort: SortKey = 'newest';
@@ -96,6 +97,12 @@ export class LeftPanelComponent implements OnInit, OnDestroy {
         this.typingSubscription = this.chatService.typingHandler$.subscribe((conversationID: string) => {
             this.chatService.setRoomTypingStatus(conversationID);
         });
+        // Listen for typing status from other users
+        this.inputStatusSubscription = this.chatService.inputStatusHandler$.subscribe((data) => {
+            if (data) {
+                this.chatService.updateRoomTypingStatus(data.conversationID, data.platformIDs && data.platformIDs.length > 0);
+            }
+        });
     }
 
     ngOnDestroy(): void {
@@ -106,6 +113,10 @@ export class LeftPanelComponent implements OnInit, OnDestroy {
         if (this.typingSubscription) {
             this.typingSubscription.unsubscribe();
             this.typingSubscription = null;
+        }
+        if (this.inputStatusSubscription) {
+            this.inputStatusSubscription.unsubscribe();
+            this.inputStatusSubscription = null;
         }
     }
 

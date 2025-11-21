@@ -243,6 +243,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- Typing indicator -->
+        <div class="typing-indicator" *ngIf="isOtherUserTyping">
+            <div class="typing-avatar">
+                <div class="avatar-initials">{{ typingUserName?.charAt(0)?.toUpperCase() || '?' }}</div>
+            </div>
+            <div class="typing-bubble">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+            </div>
+            <span class="typing-text">{{ typingUserName }} is typing...</span>
+        </div>
     </div>
 
     <!-- Selected files preview -->

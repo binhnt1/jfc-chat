@@ -25,6 +25,7 @@ export class ChatService {
     public currentUserID: string = '';
     public listConversations: ConversationDto[];
     public readonly typingHandler$ = new BehaviorSubject<string>(null);
+    public readonly inputStatusHandler$ = new BehaviorSubject<{ conversationID: string; userID: string; platformIDs: number[] } | null>(null);
     public readonly layoutState$ = new BehaviorSubject<LayoutState>(null);
     public readonly positionState$ = new BehaviorSubject<PositionState>(null);
     public readonly newGroupHandler$ = new BehaviorSubject<RoomDto | null>(null);
@@ -63,6 +64,14 @@ export class ChatService {
         const updatedRooms = currentRooms.map(room => ({
             ...room,
             typing: room.conversationID === conversationId
+        }));
+        this._rooms.next(updatedRooms);
+    }
+    updateRoomTypingStatus(conversationId: string, isTyping: boolean): void {
+        const currentRooms = this._rooms.getValue();
+        const updatedRooms = currentRooms.map(room => ({
+            ...room,
+            typing: room.conversationID === conversationId ? isTyping : room.typing
         }));
         this._rooms.next(updatedRooms);
     }
@@ -451,6 +460,24 @@ export class ChatService {
                 });
             }
             this.newMessageHandler$.next(items);
+        });
+        // Listen for typing/input status changes from other users
+        this.im.on(CbEvents.OnInputStatusChanged, (eventData: any) => {
+            const data = eventData.data;
+            if (data) {
+                // data: { conversationID: string, userID: string, platformIDs: number[] }
+                // platformIDs empty = stopped typing, platformIDs has values = is typing
+                this.inputStatusHandler$.next(data);
+                // Update conversation typing status
+                if (this.listConversations) {
+                    this.listConversations.forEach((conv: ConversationDto) => {
+                        if (conv.conversationID === data.conversationID) {
+                            conv.typing = data.platformIDs && data.platformIDs.length > 0;
+                            conv.typingUserID = conv.typing ? data.userID : null;
+                        }
+                    });
+                }
+            }
         });
     }
     private createPushInfo(title: string, desc: string, ex: string = '') {
