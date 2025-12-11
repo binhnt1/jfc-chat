@@ -1260,6 +1260,8 @@
 .message-time {
   font-size: 12px;
   color: #657786;
+  margin-left: 6px;
+  /* Space after email */
 }
 
 .sender-email {
@@ -1267,7 +1269,6 @@
   color: #374151;
   /* Darker color for better visibility */
   font-weight: 500;
-  margin-left: 6px;
 }
 
 .read-receipt-icon {
