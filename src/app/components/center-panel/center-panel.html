@@ -290,6 +290,22 @@
         </div>
     </div>
 
+    <!-- Location preview -->
+    <div class="selected-location" *ngIf="selectedLocation">
+        <div class="location-preview">
+            <div class="location-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#3b82f6" />
+                </svg>
+            </div>
+            <div class="location-info">
+                <div class="location-label">📍 Location ready to send</div>
+                <div class="location-coords">{{ selectedLocation.description }}</div>
+            </div>
+            <button class="remove-location-btn" (click)="removeLocation()" title="Remove location">×</button>
+        </div>
+    </div>
+
     <div class="chat-input">
         <!-- User suggestions dropdown -->
         <div class="user-suggestions" *ngIf="showUserSuggestions">
@@ -377,7 +393,7 @@
                 <span *ngIf="isRecording" class="recording-indicator">{{recordingDuration}}s</span>
             </button>
 
-            <button class="attachment-btn" (click)="sendLocationMessage()" title="Share location">
+            <button class="attachment-btn" [class.getting-location]="isGettingLocation" (click)="getLocation()" [disabled]="isGettingLocation" [title]="isGettingLocation ? 'Getting location...' : 'Share location'">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#89898A" />
                 </svg>
