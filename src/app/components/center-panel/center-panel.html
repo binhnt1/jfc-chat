@@ -69,6 +69,18 @@
             <span>Loading conversation...</span>
         </div>
         <div *ngFor="let group of groupedMessages" [attr.data-message-id]="group.items[0]?.clientMsgID" (contextmenu)="onMessageRightClick($event, group)">
+            <!-- Message metadata (moved above message) -->
+            <div class="message-meta" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
+                <span *ngIf="group.sendID !== currentUserID && getSenderEmail(group.sendID)" class="sender-email">{{ getSenderEmail(group.sendID) }}</span>
+                <span class="message-time">{{ group.sendTime | timestamp:'smart' }}</span>
+                <div *ngIf="group.sendID === currentUserID" class="read-receipt-icon" [class.seen]="group.isRead">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                        <path d="M11.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-1.293-1.293a1 1 0 111.414-1.414L3 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+
             <div class="message" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
                 <!-- Avatar for incoming messages -->
                 <div class="message-avatar" *ngIf="group.sendID !== currentUserID && group.items.length > 0">
@@ -234,17 +246,6 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Message metadata -->
-            <div class="message-meta" [class.incoming]="group.sendID !== currentUserID" [class.outgoing]="group.sendID === currentUserID">
-                <span>{{ group.sendTime | timestamp:'HH:mm' }}</span>
-                <div *ngIf="group.sendID === currentUserID" class="read-receipt-icon" [class.seen]="group.isRead">
-                    <svg fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
-                        <path d="M11.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-1.293-1.293a1 1 0 111.414-1.414L3 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
-                    </svg>
                 </div>
             </div>
         </div>
@@ -450,7 +451,7 @@
                 </div>
             </div>
 
-            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio">
+            <textarea #messageTextarea placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keydown)="onKeyDown($event)" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio" rows="1"></textarea>
 
             <button class="send-btn" (click)="sendMessage()" [disabled]="!canSendMessage()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

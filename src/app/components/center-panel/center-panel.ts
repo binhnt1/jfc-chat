@@ -47,6 +47,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     @ViewChild('documentInput') documentInput!: ElementRef;
     @ViewChild('messagesContainer') messagesContainer!: ElementRef;
     @ViewChild('audioPreview') audioPreview!: ElementRef<HTMLAudioElement>;
+    @ViewChild('messageTextarea') messageTextarea!: ElementRef<HTMLTextAreaElement>;
 
     messageText = '';
     showEmojiPicker = false;
@@ -85,6 +86,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     public groupedMessages: GroupMessage[] = [];
 
     private typingTimer: any;
+    private draftSaveTimer: any;
     private noMoreOldMessages = false;
     private messageSubscription!: Subscription;
     private inputStatusSubscription!: Subscription;
@@ -132,6 +134,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (this.isContextMenuVisible) {
             this.isContextMenuVisible = false;
         }
+    }
+
+    @HostListener('window:beforeunload')
+    onBeforeUnload(): void {
+        // Save draft before browser closes or page reloads
+        this.saveDraft();
     }
 
     constructor(
@@ -183,7 +191,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                     }
                 });
             });
-        this.selectedRoom$.subscribe(() => {
+        this.selectedRoom$.subscribe((room) => {
+            // Save draft of previous room before switching
+            this.saveDraft();
+
             this.resetInputs();
             this.resetChatState();
             this.typingUserName = null;
@@ -191,6 +202,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             if (this.chatService.currentRoom) {
                 this.availableUsers = this.chatService.currentRoom.members;
                 this.loadInitialMessages(this.chatService.currentRoom.conversationID);
+
+                // Load draft for new room
+                this.loadDraft();
             }
         });
 
@@ -211,6 +225,9 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     ngOnDestroy(): void {
+        // Save draft before destroying component
+        this.saveDraft();
+
         if (this.messageSubscription) {
             this.messageSubscription.unsubscribe();
             this.messageSubscription = null;
@@ -309,6 +326,37 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (this.typingTimer)
             clearTimeout(this.typingTimer);
         this.chatService.sendTypingStatus(this.chatService.currentRoom.conversationID);
+
+        // Auto-resize textarea
+        this.adjustTextareaHeight();
+
+        // Auto-save draft with debouncing (1 second delay)
+        if (this.draftSaveTimer) {
+            clearTimeout(this.draftSaveTimer);
+        }
+        this.draftSaveTimer = setTimeout(() => {
+            this.saveDraft();
+        }, 1000);
+    }
+
+    private adjustTextareaHeight(): void {
+        if (this.messageTextarea && this.messageTextarea.nativeElement) {
+            const textarea = this.messageTextarea.nativeElement;
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height based on scrollHeight, with max height of 150px
+            const newHeight = Math.min(textarea.scrollHeight, 150);
+            textarea.style.height = newHeight + 'px';
+        }
+    }
+
+    public onKeyDown(event: KeyboardEvent): void {
+        // Send message on Enter (without Shift)
+        // Allow new line on Shift+Enter
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent new line
+            this.sendMessage();
+        }
     }
 
     public async sendMessage(): Promise<void> {
@@ -389,6 +437,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         try {
             await Promise.all(sendPromises).then((data: any) => {
                 this.resetInputs();
+                this.clearDraft(); // Clear draft after successful send
                 this.messages.push(...data);
                 this.recalculateMessageGroups();
                 this.shouldScrollToBottom = true;
@@ -418,6 +467,14 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         const lightness = 40;  // %
 
         return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
+
+    public getSenderEmail(sendID: string): string {
+        if (!this.chatService.currentRoom || !this.chatService.currentRoom.members) {
+            return '';
+        }
+        const member = this.chatService.currentRoom.members.find(m => m.userID === sendID);
+        return member?.email || '';
     }
 
     public async onScroll(event: any): Promise<void> {
@@ -794,6 +851,11 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         // Reset location
         this.selectedLocation = null;
         this.isGettingLocation = false;
+
+        // Reset textarea height
+        if (this.messageTextarea && this.messageTextarea.nativeElement) {
+            this.messageTextarea.nativeElement.style.height = 'auto';
+        }
     }
     private resetChatState(): void {
         this.messages = [];
@@ -1159,5 +1221,59 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     removeLocation(): void {
         this.selectedLocation = null;
         this.isGettingLocation = false;
+    }
+
+    // Draft management methods
+    private saveDraft(): void {
+        if (!this.chatService.currentRoom) return;
+
+        const conversationID = this.chatService.currentRoom.conversationID;
+        const draft = {
+            messageText: this.messageText,
+            selectedLocation: this.selectedLocation,
+            timestamp: Date.now()
+        };
+
+        // Only save if there's content
+        if (draft.messageText.trim() || draft.selectedLocation) {
+            localStorage.setItem(`draft_${conversationID}`, JSON.stringify(draft));
+        } else {
+            // Clear draft if empty
+            localStorage.removeItem(`draft_${conversationID}`);
+        }
+    }
+
+    private loadDraft(): void {
+        if (!this.chatService.currentRoom) return;
+
+        const conversationID = this.chatService.currentRoom.conversationID;
+        const draftData = localStorage.getItem(`draft_${conversationID}`);
+
+        if (draftData) {
+            try {
+                const draft = JSON.parse(draftData);
+
+                // Restore message text
+                if (draft.messageText) {
+                    this.messageText = draft.messageText;
+                    // Trigger textarea resize after restore
+                    setTimeout(() => this.adjustTextareaHeight(), 0);
+                }
+
+                // Restore location
+                if (draft.selectedLocation) {
+                    this.selectedLocation = draft.selectedLocation;
+                }
+            } catch (error) {
+                console.error('Failed to load draft:', error);
+            }
+        }
+    }
+
+    private clearDraft(): void {
+        if (!this.chatService.currentRoom) return;
+
+        const conversationID = this.chatService.currentRoom.conversationID;
+        localStorage.removeItem(`draft_${conversationID}`);
     }
 }
