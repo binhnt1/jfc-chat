@@ -444,6 +444,14 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
+    public getSenderEmail(sendID: string): string {
+        if (!this.chatService.currentRoom || !this.chatService.currentRoom.members) {
+            return '';
+        }
+        const member = this.chatService.currentRoom.members.find(m => m.userID === sendID);
+        return member?.email || '';
+    }
+
     public async onScroll(event: any): Promise<void> {
         if (event.target.scrollTop === 0) {
             await this.loadMoreMessages();
