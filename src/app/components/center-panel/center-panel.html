@@ -86,7 +86,7 @@
                 <div class="message-avatar" *ngIf="group.sendID !== currentUserID && group.items.length > 0">
                     <img *ngIf="group.items[0].senderFaceUrl" [src]="group.items[0].senderFaceUrl" alt="Avatar">
                     <div *ngIf="!group.items[0].senderFaceUrl" class="avatar-initials" [style.background-color]="getAvatarColor(group.items[0].senderNickname)">
-                        {{ group.items[0].senderNickname.substring(0, 2).toUpperCase() }}
+                        {{ getSenderEmail(group.items[0].sendID)?.substring(0, 2).toUpperCase() }}
                     </div>
                 </div>
 
@@ -501,7 +501,7 @@
                 <div class="member-avatar">
                     <img *ngIf="member.faceURL" [src]="member.faceURL" [alt]="member.nickname">
                     <div *ngIf="!member.faceURL" class="avatar-initials" [style.background-color]="getAvatarColor(member.nickname || member.userID)">
-                        {{ (member.nickname || member.userID).substring(0, 2).toUpperCase() }}
+                        {{ member.email.substring(0, 2).toUpperCase() }}
                     </div>
                 </div>
                 <div class="member-info">
