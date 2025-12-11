@@ -166,25 +166,7 @@ export class ChatWidgetComponent implements OnInit {
                             }
 
                             // create room
-                            let rooms = await this.service.getJoinedRooms(this.uid);
-                            if (!rooms || rooms.length == 0) {
-                                await this.service.createRoom({
-                                    ownerUserID: sale.userID,
-                                    memberUserIDs: [this.uid],
-                                    groupName: this.groupname,
-                                    bgColor: UtilityHelper.getRandomDarkColor(),
-                                    ex: JSON.stringify({ type: 'private', groupId: this.groupid }),
-                                });
-                                rooms = await this.service.getJoinedRooms(this.uid);
-                            }
-                            rooms = rooms.filter(c => c.groupName == this.groupname);
-                            if (!rooms || rooms.length == 0) {
-                                rooms = rooms.filter(c => {
-                                    let ex = JSON.parse(c.ex || '{}');
-                                    return ex.groupId == this.groupid;
-                                });
-                            }
-                            if (!rooms || rooms.length == 0) return;
+                            let rooms = await this.createRoomIfNotExist(sale!);
 
                             // get conversions
                             let conversations = await this.chatService.conversations();
@@ -251,5 +233,46 @@ export class ChatWidgetComponent implements OnInit {
             this.chatService.setSelectedRoom(firstRoom);
         });
         this.selectedRoom$ = this.chatService.selectedRoom$;
+    }
+
+    private async createRoomIfNotExist(sale: UserDto): Promise<RoomDto[]> {
+        let rooms = await this.service.getJoinedRooms(this.uid);
+        if (!rooms || rooms.length == 0) {
+            await this.service.createRoom({
+                ownerUserID: sale.userID,
+                memberUserIDs: [this.uid],
+                groupName: this.groupname,
+                bgColor: UtilityHelper.getRandomDarkColor(),
+                ex: JSON.stringify({ type: 'private', groupId: this.groupid }),
+            });
+            rooms = await this.service.getJoinedRooms(this.uid);
+        }
+        rooms = rooms.filter(c => c.groupName == this.groupname);
+        if (!rooms || rooms.length == 0) {
+            rooms = rooms.filter(c => {
+                let ex = JSON.parse(c.ex || '{}');
+                return ex.groupId == this.groupid;
+            });
+        }
+        if (!rooms || rooms.length == 0) {
+            await this.service.createRoom({
+                ownerUserID: sale.userID,
+                memberUserIDs: [this.uid],
+                groupName: this.groupname,
+                bgColor: UtilityHelper.getRandomDarkColor(),
+                ex: JSON.stringify({ type: 'private', groupId: this.groupid }),
+            });
+            rooms = await this.service.getJoinedRooms(this.uid);
+            rooms = rooms.filter(c => {
+                let ex = JSON.parse(c.ex || '{}');
+                return ex.groupId == this.groupid;
+            });
+        }
+        if (rooms && rooms.length > 0) {
+            rooms.forEach((room: RoomDto) => {
+                room.symbol = room.ex ? JSON.parse(room.ex).symbol : room.groupName.substring(0, 2);
+            });
+        }
+        return rooms;
     }
 }

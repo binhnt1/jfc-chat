@@ -57,7 +57,7 @@
     </div>
 
     <div class="chat-messages" #messagesContainer (scroll)="onScroll($event)">
-        <div class="date-separator">
+        <div class="date-separator" *ngIf="!groupedMessages || groupedMessages.length == 0">
             <span>Loading more...</span>
         </div>
 
