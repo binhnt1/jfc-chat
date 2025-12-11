@@ -1,7 +1,7 @@
 <div class="center-panel">
     <div class="chat-header">
         <div class="room-info">
-            <div class="room-avatar" [style.background-color]="(selectedRoom$ | async)?.bgColor || '#3b82f6'">
+            <div class="room-avatar" [style.background-color]="(selectedRoom$ | async)?.bgColor || '#3b82f6'" (click)="showMembersPopup()" style="cursor: pointer;" title="Click to view members">
                 {{ (selectedRoom$ | async)?.symbol || 'R0' | uppercase }}
             </div>
             <div class="room-details">
@@ -470,4 +470,60 @@
             <span>Recall message</span>
         </li>
     </ul>
+</div>
+
+<!-- Members popup -->
+<div id="members-popup" class="popup-overlay" [ngClass]="{'show': activeMembersPopup}">
+    <div class="popup-content members-popup-content">
+        <div class="popup-header">
+            <h3 class="popup-title">Room Members</h3>
+            <button id="close-members-popup-btn" class="close-popup-btn" (click)="closeMembersPopup()">&times;</button>
+        </div>
+        <div class="members-list" *ngIf="(selectedRoom$ | async)?.members?.length">
+            <div class="member-item" *ngFor="let member of (selectedRoom$ | async)?.members" (click)="viewMemberDetail(member)">
+                <div class="member-avatar">
+                    <img *ngIf="member.faceURL" [src]="member.faceURL" [alt]="member.nickname">
+                    <div *ngIf="!member.faceURL" class="avatar-initials" [style.background-color]="getAvatarColor(member.nickname || member.userID)">
+                        {{ (member.nickname || member.userID).charAt(0).toUpperCase() }}
+                    </div>
+                </div>
+                <div class="member-info">
+                    <div class="member-name">{{ member.nickname || member.userID }}</div>
+                    <div class="member-email">{{ member.email }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="empty-state" *ngIf="!(selectedRoom$ | async)?.members?.length">
+            <p>No members in this room</p>
+        </div>
+    </div>
+</div>
+
+<!-- Member detail popup -->
+<div id="member-detail-popup" class="popup-overlay" [ngClass]="{'show': activeMemberDetailPopup}">
+    <div class="popup-content" *ngIf="selectedMember">
+        <button id="close-member-detail-popup-btn" class="close-popup-btn" (click)="closeMemberDetailPopup()">&times;</button>
+        <img id="popup-avatar" class="popup-avatar" [src]="selectedMember.faceURL || avatarDefault" [alt]="selectedMember.nickname">
+        <h3 id="popup-name" class="popup-name">{{ selectedMember.userID }}</h3>
+        <div class="popup-contact-info">
+            <div class="popup-contact-item" *ngIf="selectedMember.phone">
+                <div class="popup-contact-icon">
+                    <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17 6V16C17 20 16 21 12 21H6C2 21 1 20 1 16V6C1 2 2 1 6 1H12C16 1 17 2 17 6Z" stroke="#202020" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M11 4.5H7" stroke="#202020" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M9.0002 18.1C9.85624 18.1 10.5502 17.406 10.5502 16.55C10.5502 15.694 9.85624 15 9.0002 15C8.14415 15 7.4502 15.694 7.4502 16.55C7.4502 17.406 8.14415 18.1 9.0002 18.1Z" stroke="#202020" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <span id="popup-phone">{{ selectedMember.phone }}</span>
+            </div>
+            <div class="popup-contact-item">
+                <div class="popup-contact-icon">
+                    <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13.167 15.7082H4.83366C1.79199 15.7082 0.0419922 13.9582 0.0419922 10.9165V5.08317C0.0419922 2.0415 1.79199 0.291504 4.83366 0.291504H13.167C16.2087 0.291504 17.9587 2.0415 17.9587 5.08317V10.9165C17.9587 13.9582 16.2087 15.7082 13.167 15.7082ZM4.83366 1.5415C2.45033 1.5415 1.29199 2.69984 1.29199 5.08317V10.9165C1.29199 13.2998 2.45033 14.4582 4.83366 14.4582H13.167C15.5503 14.4582 16.7087 13.2998 16.7087 10.9165V5.08317C16.7087 2.69984 15.5503 1.5415 13.167 1.5415H4.83366Z" fill="#202020" />
+                    </svg>
+                </div>
+                <span id="popup-email">{{ selectedMember.email }}</span>
+            </div>
+        </div>
+    </div>
 </div>

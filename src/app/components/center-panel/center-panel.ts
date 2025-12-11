@@ -113,6 +113,12 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     private mediaRecorder: MediaRecorder | null = null;
     recordedAudio: { file: File; duration: number } | null = null;
 
+    // Members popup properties
+    activeMembersPopup: boolean = false;
+    activeMemberDetailPopup: boolean = false;
+    selectedMember: GroupMemberDto | null = null;
+    avatarDefault: string = UtilityHelper.avatarDefault;
+
     public get currentUserID(): string {
         return this.chatService.currentUserID;
     }
@@ -1114,5 +1120,25 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             'audio/mpeg': 'mp3'
         };
         return mimeToExt[mimeType] || 'webm';
+    }
+
+    // Members popup methods
+    showMembersPopup(): void {
+        this.activeMembersPopup = true;
+    }
+
+    closeMembersPopup(): void {
+        this.activeMembersPopup = false;
+    }
+
+    viewMemberDetail(member: GroupMemberDto): void {
+        this.selectedMember = member;
+        this.activeMemberDetailPopup = true;
+        this.activeMembersPopup = false; // Close members list popup
+    }
+
+    closeMemberDetailPopup(): void {
+        this.selectedMember = null;
+        this.activeMemberDetailPopup = false;
     }
 }
