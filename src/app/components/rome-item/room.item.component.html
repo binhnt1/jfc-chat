@@ -10,7 +10,7 @@
     </div>
     <div class="room-meta">
         <div class="room-time">{{ room.createTime | relativeTime }}</div>
-        <div class="room-status" [ngClass]="room.introduction == 'open' ? 'open' : 'closed'">{{ room.introduction }}</div>
+        <div class="room-status"  *ngIf="(chatService.userType$ | async) == UserType.Sale" [ngClass]="room.introduction == 'open' ? 'open' : 'closed'">{{ room.introduction }}</div>
         <div class="room-badge" *ngIf="room.conversation && room.conversation.unreadCount">{{ room.conversation && room.conversation.unreadCount }}</div>
     </div>
 </div>

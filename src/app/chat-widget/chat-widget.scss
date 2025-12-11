@@ -63,7 +63,7 @@
     right: 2px;
     bottom: 2px;
     width: 450px;
-    height: 400px;
+    height: 500px;
     z-index: 1000;
     position: fixed;
 
@@ -233,6 +233,10 @@
             display: none !important;
           }
         }
+
+        .center-panel {
+          max-height: calc(100vh - 56px) !important;
+        }
       }
 
       &.position-top {
@@ -266,9 +270,9 @@
       }
 
       .chat-messages {
+        flex-grow: 1;
         max-width: 100%;
         overflow-x: hidden;
-        min-height: calc(100vh - 245px);
         max-height: calc(100vh - 245px);
       }
     }

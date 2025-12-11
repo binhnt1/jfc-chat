@@ -22,6 +22,7 @@ import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 export class LeftPanelComponent implements OnInit, OnDestroy {
     searchTerm = '';
     sortBy = 'newest';
+    UserType = UserType;
     openedExpanded = true;
     closedExpanded = true;
     PositionState = PositionState;

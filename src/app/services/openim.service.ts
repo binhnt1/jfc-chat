@@ -1,11 +1,12 @@
 import { BehaviorSubject } from "rxjs";
 import { Injectable } from "@angular/core";
 import { ApiService } from "./api.service";
+import { UserType } from "../core/domains/user.dto";
 import { OpenIMConfig } from "../config/openim.config";
 import { UtilityHelper } from "../core/utility.helper";
-import { LayoutState, PositionState } from "../core/domains/result.api";
 import { ConversationDto } from "../core/domains/conversation.dto";
 import { GroupMemberDto, RoomDto } from "../core/domains/room.dto";
+import { LayoutState, PositionState } from "../core/domains/result.api";
 import { ImageDimensions, ImageProcessingOptions } from "../core/domains/image.data";
 import { CbEvents, getSDK, MessageItem, MessageType, PicBaseInfo } from '@openim/client-sdk';
 import { MessageDto, MessageFileDto, MessageImageDto, MessageLocationDto, MessageReplyDto, MessageSoundDto, MessageTextDto, MessageVideoDto, RevokeMessageDto } from "../core/domains/message.dto";
@@ -24,6 +25,7 @@ export class ChatService {
     public adminToken: string = '';
     public currentUserID: string = '';
     public listConversations: ConversationDto[];
+    public readonly userType$ = new BehaviorSubject<UserType>(null);
     public readonly typingHandler$ = new BehaviorSubject<string>(null);
     public readonly layoutState$ = new BehaviorSubject<LayoutState>(null);
     public readonly positionState$ = new BehaviorSubject<PositionState>(null);
@@ -55,6 +57,9 @@ export class ChatService {
         const currentRooms = this._rooms.getValue();
         const updatedRooms = [room, ...currentRooms];
         this._rooms.next(updatedRooms);
+    }
+    getRooms(): RoomDto[] {
+        return this._rooms.getValue();
     }
     setRooms(rooms: RoomDto[]): void {
         this._rooms.next(rooms);

@@ -5,20 +5,24 @@
             <span class="star-icon">⭐</span>
             <h3>Chat Details</h3>
         </div>
-        <button class="more-options">⋯</button>
+        <button class="header-btn" (click)="toggleChat(LayoutState.Close); $event.stopPropagation()" title="Close">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+            </svg>
+        </button>
     </div>
 
     <!-- User List Section -->
     <div class="users-section" *ngIf="(selectedRoom$ | async)?.members?.length">
-        <div class="user-item" *ngFor="let user of (selectedRoom$ | async)?.members" (click)="viewUser(user)">
+        <div class="user-item" *ngFor="let user of (selectedRoom$ | async)?.members">
             <div class="user-avatar">
                 <img [src]="user.faceURL || avatarDefault" [alt]="user.nickname">
             </div>
             <div class="user-info">
-                <div class="user-name">{{ user.nickname }}</div>
                 <div class="user-email">{{ user.email }}</div>
+                <div class="user-name">{{ user.nickname }}</div>
             </div>
-            <button class="user-menu">⋯</button>
+            <button class="user-menu" (click)="viewUser(user)">⋯</button>
         </div>
     </div>
 

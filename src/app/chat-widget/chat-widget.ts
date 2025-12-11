@@ -36,10 +36,13 @@ export class ChatWidgetComponent implements OnInit {
     @Input() phone: string = '';
     @Input() gender: number = 0;
     @Input() avatar: string = '';
+    @Input() groupid: string = '';
+    @Input() groupname: string = '';
     @Input() type: UserType = UserType.Customer;
     @Input() layout: LayoutState = LayoutState.Icon;
     @Input() position: PositionState = PositionState.Widget;
 
+    UserType = UserType;
     members: UserDto[] = [];
     LayoutState = LayoutState;
     PositionState = PositionState;
@@ -61,10 +64,17 @@ export class ChatWidgetComponent implements OnInit {
 
     async ngOnInit(): Promise<void> {
         if (!this.uid) return;
+        if (!this.groupid) return;
         if (!this.type) this.type = UserType.Customer;
+        else {
+            let type = this.type.toString().toLowerCase();
+            if (type == UserType.Sale.toString()) this.type = UserType.Sale;
+            else this.type = UserType.Customer;
+        }
         if (!this.layout) this.layout = LayoutState.Icon;
         if (!this.position) this.position = PositionState.Widget;
 
+        this.chatService.userType$.next(this.type);
         this.chatService.layoutState$.next(this.layout);
         this.chatService.positionState$.next(this.position);
         let token = await this.service.getUserToken(this.uid);
@@ -161,11 +171,20 @@ export class ChatWidgetComponent implements OnInit {
                                 await this.service.createRoom({
                                     ownerUserID: sale.userID,
                                     memberUserIDs: [this.uid],
+                                    groupName: this.groupname,
                                     bgColor: UtilityHelper.getRandomDarkColor(),
-                                    groupName: 'Room: ' + sale.nickname + ' - ' + this.uid,
+                                    ex: JSON.stringify({ type: 'private', groupId: this.groupid }),
                                 });
                                 rooms = await this.service.getJoinedRooms(this.uid);
                             }
+                            rooms = rooms.filter(c => c.groupName == this.groupname);
+                            if (!rooms || rooms.length == 0) {
+                                rooms = rooms.filter(c => {
+                                    let ex = JSON.parse(c.ex || '{}');
+                                    return ex.groupId == this.groupid;
+                                });
+                            }
+                            if (!rooms || rooms.length == 0) return;
 
                             // get conversions
                             let conversations = await this.chatService.conversations();
@@ -205,10 +224,22 @@ export class ChatWidgetComponent implements OnInit {
 
     @Input() public openChat = (): void => {
         if (this.chatService.positionState$.value == PositionState.Widget) {
-            if (this.chatService.layoutState$.value == LayoutState.Maximize)
-                this.chatService.layoutState$.next(LayoutState.Close);
-            this.chatService.positionState$.next(PositionState.Top);
-        } else this.chatService.positionState$.next(PositionState.Widget);
+            let count = this.chatService.getRooms().length;
+            if (count == 1) {
+                this.chatService.layoutState$.next(LayoutState.Minimize);
+                this.chatService.positionState$.next(PositionState.Widget);
+            } else {
+                if (this.chatService.layoutState$.value == LayoutState.Maximize)
+                    this.chatService.layoutState$.next(LayoutState.Close);
+                this.chatService.positionState$.next(PositionState.Top);
+            }
+        } else {
+            let count = this.chatService.getRooms().length;
+            if (count == 1) {
+                this.chatService.layoutState$.next(LayoutState.Minimize);
+                this.chatService.positionState$.next(PositionState.Widget);
+            } else this.chatService.positionState$.next(PositionState.Widget);
+        }
     }
 
     private selectFirstAvailableRoom(): void {

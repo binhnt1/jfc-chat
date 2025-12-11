@@ -53,6 +53,8 @@
 
 .users-section {
   padding: 20px;
+  overflow: auto;
+  max-height: 350px;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -81,14 +83,14 @@
   flex: 1;
 }
 
-.user-name {
+.user-email {
   font-size: 14px;
   font-weight: 600;
   color: #111827;
   margin-bottom: 2px;
 }
 
-.user-email {
+.user-name {
   font-size: 12px;
   color: #6b7280;
 }
@@ -662,8 +664,10 @@
 
 .popup-name {
   font-size: 20px;
+  overflow: hidden;
   font-weight: 600;
   margin: 0 0 24px 0;
+  text-overflow: ellipsis;
 }
 
 .popup-contact-info {
@@ -688,4 +692,13 @@
   align-items: center;
   justify-content: center;
   color: #555;
+}
+
+.header-btn {
+  border: none;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  background: none;
+  color: #8e8e93;
 }

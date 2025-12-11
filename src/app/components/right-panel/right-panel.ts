@@ -11,6 +11,7 @@ import { TimestampPipe } from "../../core/pipes/timestamp";
 import { GroupMemberDto, RoomDto } from '../../core/domains/room.dto';
 import { ImageViewerService } from '../../services/image.viewer.service';
 import { VideoViewerService } from '../../services/video.viewer.service';
+import { LayoutState, PositionState } from '../../core/domains/result.api';
 
 @Component({
     standalone: true,
@@ -28,6 +29,7 @@ export class RightPanelComponent {
     avatarDefault: string = UtilityHelper.avatarDefault;
 
     ticketStatus = 'open';
+    LayoutState = LayoutState;
     ticketPriority = 'normal';
     ticketType = 'shipment-tracking';
     ticketSubject = 'Overseas shipment tracking';
@@ -61,6 +63,7 @@ export class RightPanelComponent {
     hideStatus() {
         this.activeStatus = false;
     }
+
     toggleStatus(): void {
         this.activeStatus = !this.activeStatus;
     }
@@ -73,6 +76,13 @@ export class RightPanelComponent {
             case 'close':
                 await this.chatService.closeGroup(this.chatService.currentRoom.groupID);
                 break;
+        }
+    }
+
+    toggleChat(layout: LayoutState) {
+        this.chatService.layoutState$.next(layout);
+        if (layout == LayoutState.Maximize) {
+            this.chatService.positionState$.next(PositionState.Widget);
         }
     }
 

@@ -2,7 +2,7 @@
 	<app-left-panel></app-left-panel>
 </div>
 <div class="chat-widget" *ngIf="(chatService.layoutState$ | async) == LayoutState.Maximize" [class.maximize]="(chatService.layoutState$ | async) == LayoutState.Maximize" [ngStyle]="{top: top}">
-	<app-left-panel></app-left-panel>
+	<app-left-panel *ngIf="type == UserType.Sale"></app-left-panel>
 	<app-center-panel></app-center-panel>
 	<app-right-panel></app-right-panel>
 </div>

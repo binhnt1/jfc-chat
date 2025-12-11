@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RoomDto } from '../../core/domains/room.dto';
+import { UserType } from '../../core/domains/user.dto';
+import { ChatService } from '../../services/openim.service';
 import { RelativeTimePipe } from '../../core/pipes/relative.time';
 
 @Component({
@@ -11,9 +13,9 @@ import { RelativeTimePipe } from '../../core/pipes/relative.time';
     imports: [CommonModule, RelativeTimePipe],
 })
 export class RoomItemComponent {
-
+    UserType = UserType;
     @Input() room: RoomDto;
 
-    constructor() {
+    constructor(public chatService: ChatService) {
     }
 }
