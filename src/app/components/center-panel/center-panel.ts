@@ -192,9 +192,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 });
             });
         this.selectedRoom$.subscribe((room) => {
-            // Save draft of previous room before switching
-            this.saveDraft();
-
             this.resetInputs();
             this.resetChatState();
             this.typingUserName = null;
@@ -429,8 +426,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 requestId: requestId,
                 latitude: this.selectedLocation.latitude,
                 longitude: this.selectedLocation.longitude,
-                description: this.selectedLocation.description,
                 groupID: this.chatService.currentRoom.groupID,
+                description: this.selectedLocation.description,
             }));
         }
 
@@ -578,8 +575,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 // Store location without sending
                 this.selectedLocation = {
                     latitude: latitude,
+                    description: label,
                     longitude: longitude,
-                    description: label
                 };
 
                 this.isGettingLocation = false;
@@ -1230,16 +1227,14 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
         const conversationID = this.chatService.currentRoom.conversationID;
         const draft = {
-            messageText: this.messageText,
-            selectedLocation: this.selectedLocation,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            messageText: this.messageText || '',
         };
 
         // Only save if there's content
-        if (draft.messageText.trim() || draft.selectedLocation) {
+        if (draft.messageText.trim()) {
             localStorage.setItem(`draft_${conversationID}`, JSON.stringify(draft));
         } else {
-            // Clear draft if empty
             localStorage.removeItem(`draft_${conversationID}`);
         }
     }
