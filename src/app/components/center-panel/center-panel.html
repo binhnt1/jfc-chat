@@ -86,7 +86,7 @@
                 <div class="message-avatar" *ngIf="group.sendID !== currentUserID && group.items.length > 0">
                     <img *ngIf="group.items[0].senderFaceUrl" [src]="group.items[0].senderFaceUrl" alt="Avatar">
                     <div *ngIf="!group.items[0].senderFaceUrl" class="avatar-initials" [style.background-color]="getAvatarColor(group.items[0].senderNickname)">
-                        {{ group.items[0].senderNickname.charAt(0).toUpperCase() }}
+                        {{ group.items[0].senderNickname.substring(0, 2).toUpperCase() }}
                     </div>
                 </div>
 
@@ -501,7 +501,7 @@
                 <div class="member-avatar">
                     <img *ngIf="member.faceURL" [src]="member.faceURL" [alt]="member.nickname">
                     <div *ngIf="!member.faceURL" class="avatar-initials" [style.background-color]="getAvatarColor(member.nickname || member.userID)">
-                        {{ (member.nickname || member.userID).charAt(0).toUpperCase() }}
+                        {{ (member.nickname || member.userID).substring(0, 2).toUpperCase() }}
                     </div>
                 </div>
                 <div class="member-info">
@@ -521,7 +521,7 @@
     <div class="popup-content" *ngIf="selectedMember">
         <button id="close-member-detail-popup-btn" class="close-popup-btn" (click)="closeMemberDetailPopup()">&times;</button>
         <img id="popup-avatar" class="popup-avatar" [src]="selectedMember.faceURL || avatarDefault" [alt]="selectedMember.nickname">
-        <h3 id="popup-name" class="popup-name">{{ selectedMember.userID }}</h3>
+        <h3 id="popup-name" class="popup-name">{{ selectedMember.nickname || selectedMember.userID }}</h3>
         <div class="popup-contact-info">
             <div class="popup-contact-item" *ngIf="selectedMember.phone">
                 <div class="popup-contact-icon">
