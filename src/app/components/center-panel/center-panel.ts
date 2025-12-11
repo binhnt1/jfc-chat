@@ -8,6 +8,7 @@ import { FileSizePipe } from "../../core/pipes/file.size";
 import { UtilityHelper } from '../../core/utility.helper';
 import { TimestampPipe } from "../../core/pipes/timestamp";
 import { ChatService } from '../../services/openim.service';
+import { UserDto, UserType } from '../../core/domains/user.dto';
 import { GroupMemberDto, RoomDto } from '../../core/domains/room.dto';
 import { VideoViewerService } from '../../services/video.viewer.service';
 import { ImageViewerService } from '../../services/image.viewer.service';
@@ -361,6 +362,13 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         let requestId = UtilityHelper.createUniqueId();
         if (!this.canSendMessage() || !this.chatService.currentRoom) {
             return;
+        }
+
+        // Auto-open room if user is Customer and room is closed
+        const userType = this.chatService.userType$.value;
+        const roomStatus = this.chatService.currentRoom.introduction;
+        if (userType === UserType.Customer && roomStatus === 'close') {
+            await this.chatService.openGroup(this.chatService.currentRoom.groupID);
         }
 
         // Create a list of promises for all messages to be sent
