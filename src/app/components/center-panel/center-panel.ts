@@ -256,6 +256,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (layout == LayoutState.Maximize) {
             this.chatService.positionState$.next(PositionState.Widget);
         }
+        this.saveDraft();
     }
 
     async recallMessage(): Promise<void> {
@@ -436,8 +437,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         // Reset inputs immediately for a better UX
         try {
             await Promise.all(sendPromises).then((data: any) => {
+                this.clearDraft();
                 this.resetInputs();
-                this.clearDraft(); // Clear draft after successful send
                 this.messages.push(...data);
                 this.recalculateMessageGroups();
                 this.shouldScrollToBottom = true;
