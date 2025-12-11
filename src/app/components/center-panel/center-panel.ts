@@ -167,21 +167,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                         if (message.groupID === this.chatService.currentRoom.groupID) {
                             belongsToCurrentRoom = true;
                         }
-                    } else {
-                        // const myUserID = this.chatService.currentUserID;
-                        // const otherUserID = this.chatService.currentRoom.userID;
-
-                        // // Tin nhắn thuộc về cuộc trò chuyện này nếu người gửi và người nhận
-                        // // là tôi và người kia (bất kể chiều nào).
-                        // const isCorrectPairing =
-                        //     (newMessage.sendID === myUserID && newMessage.recvID === otherUserID) ||
-                        //     (newMessage.sendID === otherUserID && newMessage.recvID === myUserID);
-
-                        // if (isCorrectPairing) {
-                        //     belongsToCurrentRoom = true;
-                        // }
                     }
-
                     if (belongsToCurrentRoom) {
                         const messageExists = this.messages.some(m => m.clientMsgID === message.clientMsgID);
                         if (!messageExists) {
