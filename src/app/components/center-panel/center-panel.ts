@@ -8,6 +8,7 @@ import { FileSizePipe } from "../../core/pipes/file.size";
 import { UtilityHelper } from '../../core/utility.helper';
 import { TimestampPipe } from "../../core/pipes/timestamp";
 import { ChatService } from '../../services/openim.service';
+import { UserDto, UserType } from '../../core/domains/user.dto';
 import { GroupMemberDto, RoomDto } from '../../core/domains/room.dto';
 import { VideoViewerService } from '../../services/video.viewer.service';
 import { ImageViewerService } from '../../services/image.viewer.service';
@@ -166,21 +167,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                         if (message.groupID === this.chatService.currentRoom.groupID) {
                             belongsToCurrentRoom = true;
                         }
-                    } else {
-                        // const myUserID = this.chatService.currentUserID;
-                        // const otherUserID = this.chatService.currentRoom.userID;
-
-                        // // Tin nhắn thuộc về cuộc trò chuyện này nếu người gửi và người nhận
-                        // // là tôi và người kia (bất kể chiều nào).
-                        // const isCorrectPairing =
-                        //     (newMessage.sendID === myUserID && newMessage.recvID === otherUserID) ||
-                        //     (newMessage.sendID === otherUserID && newMessage.recvID === myUserID);
-
-                        // if (isCorrectPairing) {
-                        //     belongsToCurrentRoom = true;
-                        // }
                     }
-
                     if (belongsToCurrentRoom) {
                         const messageExists = this.messages.some(m => m.clientMsgID === message.clientMsgID);
                         if (!messageExists) {
@@ -192,9 +179,6 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 });
             });
         this.selectedRoom$.subscribe((room) => {
-            // Save draft of previous room before switching
-            this.saveDraft();
-
             this.resetInputs();
             this.resetChatState();
             this.typingUserName = null;
@@ -366,6 +350,13 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             return;
         }
 
+        // Auto-open room if user is Customer and room is closed
+        const userType = this.chatService.userType$.value;
+        const roomStatus = this.chatService.currentRoom.introduction;
+        if (userType === UserType.Customer && roomStatus === 'close') {
+            await this.chatService.openGroup(this.chatService.currentRoom.groupID);
+        }
+
         // Create a list of promises for all messages to be sent
         const sendPromises: Promise<void>[] = [];
 
@@ -429,8 +420,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 requestId: requestId,
                 latitude: this.selectedLocation.latitude,
                 longitude: this.selectedLocation.longitude,
-                description: this.selectedLocation.description,
                 groupID: this.chatService.currentRoom.groupID,
+                description: this.selectedLocation.description,
             }));
         }
 
@@ -578,8 +569,8 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
                 // Store location without sending
                 this.selectedLocation = {
                     latitude: latitude,
+                    description: label,
                     longitude: longitude,
-                    description: label
                 };
 
                 this.isGettingLocation = false;
@@ -1230,16 +1221,14 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
         const conversationID = this.chatService.currentRoom.conversationID;
         const draft = {
-            messageText: this.messageText,
-            selectedLocation: this.selectedLocation,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            messageText: this.messageText || '',
         };
 
         // Only save if there's content
-        if (draft.messageText.trim() || draft.selectedLocation) {
+        if (draft.messageText.trim()) {
             localStorage.setItem(`draft_${conversationID}`, JSON.stringify(draft));
         } else {
-            // Clear draft if empty
             localStorage.removeItem(`draft_${conversationID}`);
         }
     }
