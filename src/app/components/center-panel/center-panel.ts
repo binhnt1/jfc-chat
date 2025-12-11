@@ -119,6 +119,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     selectedMember: GroupMemberDto | null = null;
     avatarDefault: string = UtilityHelper.avatarDefault;
 
+    // Location sharing properties
+    selectedLocation: { latitude: number, longitude: number, description: string } | null = null;
+    isGettingLocation: boolean = false;
+
     public get currentUserID(): string {
         return this.chatService.currentUserID;
     }
@@ -370,6 +374,17 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
             }));
         }
 
+        // Add location message promise if location selected
+        if (this.selectedLocation) {
+            sendPromises.push(this.chatService.sendLocationMessage({
+                requestId: requestId,
+                latitude: this.selectedLocation.latitude,
+                longitude: this.selectedLocation.longitude,
+                description: this.selectedLocation.description,
+                groupID: this.chatService.currentRoom.groupID,
+            }));
+        }
+
         // Reset inputs immediately for a better UX
         try {
             await Promise.all(sendPromises).then((data: any) => {
@@ -488,39 +503,32 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (url) window.open(url, '_blank');
     }
 
-    public async sendLocationMessage(): Promise<void> {
+    public async getLocation(): Promise<void> {
         if (!navigator.geolocation) {
             ToastrHelper.Error('Geolocation is not supported by your browser', 'Error');
             return;
         }
 
+        this.isGettingLocation = true;
         ToastrHelper.Success('Getting your location...', 'Please wait');
+
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
+            (position) => {
                 const { latitude, longitude } = position.coords;
-                const label = `Lat: ${latitude}, Lng: ${longitude}`;
-                if (!this.chatService.currentRoom) return;
+                const label = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
 
-                try {
-                    const requestId = UtilityHelper.createUniqueId();
-                    const sentMessages = await this.chatService.sendLocationMessage({
-                        description: label,
-                        latitude: latitude,
-                        longitude: longitude,
-                        requestId: requestId,
-                        groupID: this.chatService.currentRoom.groupID
-                    });
+                // Store location without sending
+                this.selectedLocation = {
+                    latitude: latitude,
+                    longitude: longitude,
+                    description: label
+                };
 
-                    this.messages.push(...sentMessages);
-                    this.recalculateMessageGroups();
-                    this.shouldScrollToBottom = true;
-
-                    ToastrHelper.Success('Location sent successfully', 'Success');
-                } catch (error) {
-                    ToastrHelper.Error('Failed to send location', 'Error');
-                }
+                this.isGettingLocation = false;
+                ToastrHelper.Success('Location ready to send', 'Success');
             },
             (error) => {
+                this.isGettingLocation = false;
                 let errorMessage = 'Unable to retrieve your location';
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
@@ -609,7 +617,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     }
 
     canSendMessage(): boolean {
-        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0 || this.recordedAudio !== null;
+        return this.messageText.trim().length > 0 || this.selectedFiles.length > 0 || this.recordedAudio !== null || this.selectedLocation !== null;
     }
 
     onImageSelect(): void {
@@ -782,6 +790,10 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         this.recordedAudio = null;
         this.recordingDuration = 0;
         this.isAudioPlaying = false;
+
+        // Reset location
+        this.selectedLocation = null;
+        this.isGettingLocation = false;
     }
     private resetChatState(): void {
         this.messages = [];
@@ -1141,5 +1153,11 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     closeMemberDetailPopup(): void {
         this.selectedMember = null;
         this.activeMemberDetailPopup = false;
+    }
+
+    // Location methods
+    removeLocation(): void {
+        this.selectedLocation = null;
+        this.isGettingLocation = false;
     }
 }
