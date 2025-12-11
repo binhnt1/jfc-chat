@@ -450,7 +450,7 @@
                 </div>
             </div>
 
-            <input type="text" placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keyup.enter)="sendMessage()" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio">
+            <textarea #messageTextarea placeholder="Type a message..." [(ngModel)]="messageText" (input)="onMessageInput($event)" (keydown)="onKeyDown($event)" (paste)="onPaste($event)" class="message-input" [class.hidden-input]="isRecording || recordedAudio" rows="1"></textarea>
 
             <button class="send-btn" (click)="sendMessage()" [disabled]="!canSendMessage()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

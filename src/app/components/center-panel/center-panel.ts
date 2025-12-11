@@ -47,6 +47,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
     @ViewChild('documentInput') documentInput!: ElementRef;
     @ViewChild('messagesContainer') messagesContainer!: ElementRef;
     @ViewChild('audioPreview') audioPreview!: ElementRef<HTMLAudioElement>;
+    @ViewChild('messageTextarea') messageTextarea!: ElementRef<HTMLTextAreaElement>;
 
     messageText = '';
     showEmojiPicker = false;
@@ -309,6 +310,29 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         if (this.typingTimer)
             clearTimeout(this.typingTimer);
         this.chatService.sendTypingStatus(this.chatService.currentRoom.conversationID);
+
+        // Auto-resize textarea
+        this.adjustTextareaHeight();
+    }
+
+    private adjustTextareaHeight(): void {
+        if (this.messageTextarea && this.messageTextarea.nativeElement) {
+            const textarea = this.messageTextarea.nativeElement;
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height based on scrollHeight, with max height of 150px
+            const newHeight = Math.min(textarea.scrollHeight, 150);
+            textarea.style.height = newHeight + 'px';
+        }
+    }
+
+    public onKeyDown(event: KeyboardEvent): void {
+        // Send message on Enter (without Shift)
+        // Allow new line on Shift+Enter
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent new line
+            this.sendMessage();
+        }
     }
 
     public async sendMessage(): Promise<void> {
@@ -794,6 +818,11 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
         // Reset location
         this.selectedLocation = null;
         this.isGettingLocation = false;
+
+        // Reset textarea height
+        if (this.messageTextarea && this.messageTextarea.nativeElement) {
+            this.messageTextarea.nativeElement.style.height = 'auto';
+        }
     }
     private resetChatState(): void {
         this.messages = [];
