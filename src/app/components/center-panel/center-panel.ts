@@ -721,6 +721,7 @@ export class CenterPanelComponent implements OnInit, OnDestroy, AfterViewChecked
 
         // Reset the input
         event.target.value = '';
+        this.scrollToBottom();
     }
 
     clearSelectedFiles(): void {

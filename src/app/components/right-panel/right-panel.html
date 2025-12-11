@@ -20,7 +20,7 @@
             </div>
             <div class="user-info">
                 <div class="user-email">{{ user.email }}</div>
-                <div class="user-name">{{ user.nickname }}</div>
+                <div class="user-name">{{ user.nickname || user.userID }}</div>
             </div>
             <button class="user-menu" (click)="viewUser(user)">⋯</button>
         </div>
@@ -188,7 +188,7 @@
     <div class="popup-content" *ngIf="selectedUser">
         <button id="close-popup-btn" class="close-popup-btn" (click)="closeUserPopup()">&times;</button>
         <img id="popup-avatar" class="popup-avatar" [src]="selectedUser.faceURL || avatarDefault" [alt]="selectedUser.nickname">
-        <h3 id="popup-name" class="popup-name">{{ selectedUser.userID }}</h3>
+        <h3 id="popup-name" class="popup-name">{{ selectedUser.nickname || selectedUser.userID }}</h3>
         <div class="popup-contact-info">
             <div class="popup-contact-item" *ngIf="selectedUser.phone">
                 <div class="popup-contact-icon">
